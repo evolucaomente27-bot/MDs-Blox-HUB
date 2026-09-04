@@ -3,8 +3,8 @@
     ║                                  MDs HUB                                   ║
     ║                         Blox Fruits Universal Script                       ║
     ║                         Suporte: Sea 1, Sea 2 e Sea 3                      ║
-    ║          Arquitetura Avançada Inspirada no Banana Hub (Ultra Fast & V4)     ║
-    ║                             Versão: 4.0 Pro Edition                        ║
+    ║           Interface Gráfica Nativa (UI 100% Integrada Mobile e PC)         ║
+    ║                             Versão: 4.5 Pro Edition                        ║
     ╚════════════════════════════════════════════════════════════════════════════╝
 ]]
 
@@ -20,6 +20,7 @@ local StarterGui = game:GetService("StarterGui")
 local VirtualUser = game:GetService("VirtualUser")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
+local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -39,34 +40,23 @@ _G.MDsHub = {
     AutoChests = false,
     SelectedWeapon = "Melee", -- Melee, Sword, Gun, Blox Fruit
     FarmDistance = 25,
-    FarmPosition = "Above", -- Above, Below, Behind
     BringMobs = true,
     BringMobsRadius = 280,
     
     -- Banana Ultra Fast Attack
     FastAttack = true,
-    SuperFastAttack = true,
-    FastAttackDelay = 0.08,
     MultiHitCount = 4,
     
     -- Haki Automático
     AutoBusoHaki = true,
-    AutoObservationHaki = false,
     
-    -- Sea 3 Bosses & Eventos (Banana Style)
+    -- Sea 3 Bosses & Eventos
     AutoEliteHunter = false,
     AutoCakePrince = false,
     AutoDoughKing = false,
-    AutoRipIndra = false,
-    AutoKatakuri = false,
-    AutoPirateRaid = false,
-    AutoCastleRaid = false,
     
     -- Frutas
-    FruitESP = false,
     AutoStoreFruits = true,
-    AutoBuyRandomFruit = false,
-    AutoFruitSniper = false,
     
     -- Status (Stats)
     AutoMelee = false,
@@ -77,30 +67,22 @@ _G.MDsHub = {
     StatPoints = 3,
 
     -- =======================================================
-    -- SISTEMA AVANÇADO DE RAÇAS (V1 ATÉ V4 - BANANA ENGINE)
+    -- SISTEMA AVANÇADO DE RAÇAS (V1 ATÉ V4)
     -- =======================================================
-    -- Race V2
     AutoRaceV2 = false,
     AutoCollectBlueFlower = false,
     AutoCollectRedFlower = false,
     AutoFarmYellowFlower = false,
     
-    -- Race V3
     AutoRaceV3 = false,
     AutoQuestMinkV3 = false,
     AutoQuestHumanV3 = false,
     
-    -- Race V4 (Temple of Time & Mirage - Banana Method)
     AutoMirageNotifier = true,
     AutoTeleportMiragePeak = false,
     AutoLookAtMoon = false,
     AutoFindBlueGear = false,
-    AutoPullLever = false,
-    AutoTempleOfTime = false,
-    AutoSyncTrial = false,
     AutoCompleteTrial = false,
-    AutoKillTrialPlayers = false,
-    AutoUpgradeV4 = false,
     AutoTrainV4 = false,
 
     -- Player & Visuals
@@ -112,7 +94,7 @@ _G.MDsHub = {
     NoClip = false,
     FullBright = false,
     
-    -- Otimização & AFK Mode (Banana Style)
+    -- Teleport & Performance
     TweenSpeed = 280,
     IsTweening = false,
     BlackScreenAFK = false,
@@ -123,7 +105,7 @@ local CurrentTween = nil
 local BodyVelocityHolder = nil
 
 ----------------------------------------------------------------------
--- FUNÇÕES DE SUPORTE & TWEEN ENGINE (BANANA METHOD)
+-- FUNÇÕES DE SUPORTE & TWEEN ENGINE
 ----------------------------------------------------------------------
 
 local function Notify(title, text, duration)
@@ -151,7 +133,6 @@ local function GetHumanoid()
     return char:WaitForChild("Humanoid", 5)
 end
 
--- Tween Suave com No-Clip e Anti-Queda (Banana Hub BodyVelocity System)
 local function TweenTo(targetCFrame)
     local root = GetRootPart()
     local char = GetCharacter()
@@ -164,7 +145,6 @@ local function TweenTo(targetCFrame)
         CurrentTween:Cancel()
     end
     
-    -- Cria BodyVelocity temporário para anular gravidade durante teleporte
     if not BodyVelocityHolder or not BodyVelocityHolder.Parent then
         BodyVelocityHolder = Instance.new("BodyVelocity")
         BodyVelocityHolder.Name = "MDs_AntiFall"
@@ -201,7 +181,7 @@ local function StopTween()
     _G.MDsHub.IsTweening = false
 end
 
--- NoClip ativo durante qualquer Tween
+-- NoClip ativo durante teleporte e farm
 RunService.Stepped:Connect(function()
     if (_G.MDsHub.NoClip or _G.MDsHub.IsTweening or _G.MDsHub.AutoFarm) and LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
@@ -232,7 +212,6 @@ local function GetPlayerRace()
     return success and race or "Desconhecida"
 end
 
--- Equipar arma selecionada
 local function EquipWeapon(weaponType)
     local char = GetCharacter()
     local backpack = LocalPlayer.Backpack
@@ -263,7 +242,7 @@ local function EquipWeapon(weaponType)
 end
 
 ----------------------------------------------------------------------
--- MOTOR DE FAST ATTACK AVANÇADO (BANANA ULTRA FAST METHOD)
+-- FAST ATTACK AVANÇADO (BANANA ULTRA FAST METHOD)
 ----------------------------------------------------------------------
 
 local function ExecuteFastAttack()
@@ -275,20 +254,16 @@ local function ExecuteFastAttack()
         local activeController = combatFramework.activeController
         if activeController and activeController.equipped then
             activeController.hitboxMagnitude = 65
-            
-            -- Dispara ataques múltiplos por frame
             for i = 1, _G.MDsHub.MultiHitCount do
                 activeController:attack()
             end
-            
-            -- Reset do combo para ataque contínuo sem cooldown de animação
             activeController.timeToNextAttack = 0
             activeController.increment = 3
         end
     end)
 end
 
--- Loop de Haki de Armamento Automático (Buso Haki)
+-- Auto Haki de Armamento (Buso Haki)
 task.spawn(function()
     while task.wait(1) do
         if _G.MDsHub.AutoBusoHaki then
@@ -365,13 +340,9 @@ local function GetCurrentQuestInfo()
     return quests[#quests]
 end
 
-----------------------------------------------------------------------
--- BANCO DE DADOS & COORDENADAS: RAÇA V2, V3 E V4
-----------------------------------------------------------------------
-
 local RaceData = {
-    NPC_Alchemist = CFrame.new(1308, 12, -776),  -- Green Zone
-    NPC_Arowe = CFrame.new(290, 15, -3830),       -- Caverna Don Swan
+    NPC_Alchemist = CFrame.new(1308, 12, -776),
+    NPC_Arowe = CFrame.new(290, 15, -3830),
     
     BlueFlowers = {
         CFrame.new(-3386, 316, -3701),
@@ -390,7 +361,6 @@ local RaceData = {
         Entrance = CFrame.new(28642, 14897, 107),
         Lever = CFrame.new(28286, 14897, 103),
         AncientClock = CFrame.new(28555, 14897, 423),
-        
         Doors = {
             ["Human"] = CFrame.new(29223, 14890, -213),
             ["Mink"] = CFrame.new(29023, 14890, -381),
@@ -404,7 +374,7 @@ local RaceData = {
 }
 
 ----------------------------------------------------------------------
--- LOOP DE AUTO FARM LEVEL & BRING MOBS (BANANA STYLE)
+-- LOOP DE AUTO FARM & BRING MOBS
 ----------------------------------------------------------------------
 
 task.spawn(function()
@@ -438,11 +408,9 @@ task.spawn(function()
                         local mobRoot = targetMob.HumanoidRootPart
                         local targetOffset = CFrame.new(0, _G.MDsHub.FarmDistance, 0) * CFrame.Angles(math.rad(-90), 0, 0)
                         
-                        -- Posicionamento perfeito em cima do mob
                         GetRootPart().CFrame = mobRoot.CFrame * targetOffset
                         EquipWeapon(_G.MDsHub.SelectedWeapon)
                         
-                        -- Bring Mobs com congelamento de movimento (Banana Engine)
                         if _G.MDsHub.BringMobs and enemiesFolder then
                             for _, otherMob in pairs(enemiesFolder:GetChildren()) do
                                 if otherMob.Name:find(questInfo.Mon) and otherMob:FindFirstChild("HumanoidRootPart") and otherMob ~= targetMob then
@@ -455,7 +423,6 @@ task.spawn(function()
                             end
                         end
                         
-                        -- Disparar Fast Attack
                         if _G.MDsHub.FastAttack then
                             ExecuteFastAttack()
                         end
@@ -469,7 +436,7 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------------
--- SEA 3 BOSSES: CAKE PRINCE & DOUGH KING (BANANA METHOD)
+-- SEA 3 BOSSES & RAÇA V4 LOOPS
 ----------------------------------------------------------------------
 
 task.spawn(function()
@@ -480,12 +447,10 @@ task.spawn(function()
                 local cakeBoss = enemies and (enemies:FindFirstChild("Cake Prince") or enemies:FindFirstChild("Dough King"))
                 
                 if cakeBoss and cakeBoss:FindFirstChild("Humanoid") and cakeBoss.Humanoid.Health > 0 then
-                    -- Ataca o chefe diretamente
                     GetRootPart().CFrame = cakeBoss.HumanoidRootPart.CFrame * CFrame.new(0, 25, 0)
                     EquipWeapon(_G.MDsHub.SelectedWeapon)
                     ExecuteFastAttack()
                 else
-                    -- Farma os 500 mobs de Chocolate/Peanut Island para invocar o Boss
                     for _, mob in pairs(enemies:GetChildren()) do
                         if (mob.Name:find("Peanut") or mob.Name:find("Cocoa") or mob.Name:find("Cookie")) and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
                             GetRootPart().CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 22, 0)
@@ -500,14 +465,11 @@ task.spawn(function()
     end
 end)
 
--- Auto Elite Hunter (Sea 3)
 task.spawn(function()
     while task.wait(2) do
         if _G.MDsHub.AutoEliteHunter and GetCurrentSea() == 3 then
             pcall(function()
-                -- Pede a missão no NPC Elite Hunter
                 ReplicatedStorage.Remotes.CommF_:InvokeServer("EliteHunter")
-                
                 local eliteNames = {"Deandre", "Diablo", "Urban"}
                 local enemies = Workspace:FindFirstChild("Enemies")
                 if enemies then
@@ -526,31 +488,7 @@ task.spawn(function()
     end
 end)
 
-----------------------------------------------------------------------
--- SISTEMA AVANÇADO DE RAÇA V4 (BANANA SIGNATURE ENGINE)
-----------------------------------------------------------------------
-
--- 1. Alerta de Mirage Island & Notificação de Lua Cheia
-task.spawn(function()
-    while task.wait(2) do
-        if _G.MDsHub.AutoMirageNotifier and GetCurrentSea() == 3 then
-            pcall(function()
-                local locations = Workspace._WorldOrigin:FindFirstChild("Locations")
-                local mirage = (locations and locations:FindFirstChild("Mirage Island")) or Workspace:FindFirstChild("Mirage Island")
-                if mirage then
-                    Notify("Mirage Island", "🌟 Mirage Island detectada no servidor!", 5)
-                    
-                    -- Se o teleporte ao pico estiver ativo, voa até o ponto mais alto
-                    if _G.MDsHub.AutoTeleportMiragePeak then
-                        TweenTo(mirage:GetModelCFrame() * CFrame.new(0, 350, 0))
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- 2. Travar Câmera na Lua Cheia & Ativar Ressonância V3 (Banana Method)
+-- Look at Moon Lock
 task.spawn(function()
     while task.wait(0.2) do
         if _G.MDsHub.AutoLookAtMoon and GetCurrentSea() == 3 then
@@ -558,10 +496,8 @@ task.spawn(function()
                 local moonDirection = Lighting:GetMoonDirection()
                 if moonDirection then
                     Camera.CFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + moonDirection * 2000)
-                    
-                    -- Dispara a habilidade da Raça V3 para ressonar com a Lua
                     VirtualUser:CaptureController()
-                    VirtualUser:SetKeyDown("0x74") -- 't'
+                    VirtualUser:SetKeyDown("0x74")
                     task.wait(0.05)
                     VirtualUser:SetKeyUp("0x74")
                 end
@@ -570,7 +506,7 @@ task.spawn(function()
     end
 end)
 
--- 3. Scanner de Engrenagem Azul (Blue Gear Scanner - Banana Mesh ID Detect)
+-- Blue Gear Scanner
 task.spawn(function()
     while task.wait(0.5) do
         if _G.MDsHub.AutoFindBlueGear and GetCurrentSea() == 3 then
@@ -589,111 +525,7 @@ task.spawn(function()
     end
 end)
 
--- 4. Puxar Alavanca do Templo do Tempo (Pull Lever)
-local function PullTempleLever()
-    pcall(function()
-        TweenTo(RaceData.TempleOfTime.Lever)
-        task.wait(1.2)
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v.Name == "Lever" and v:IsA("ClickDetector") then
-                fireclickdetector(v)
-            end
-        end
-        Notify("Templo do Tempo", "Alavanca puxada com sucesso!")
-    end)
-end
-
--- 5. Auto Complete Trial (Solucionador Instantâneo do Banana Hub)
-task.spawn(function()
-    while task.wait(0.15) do
-        if _G.MDsHub.AutoCompleteTrial and GetCurrentSea() == 3 then
-            pcall(function()
-                local race = GetPlayerRace()
-                local enemies = Workspace:FindFirstChild("Enemies")
-                
-                -- Desafios de Combate (Human, Ghoul, Cyborg)
-                if enemies and (race == "Human" or race == "Ghoul" or race == "Cyborg") then
-                    for _, mob in pairs(enemies:GetChildren()) do
-                        if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and mob:FindFirstChild("HumanoidRootPart") then
-                            GetRootPart().CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0)
-                            EquipWeapon(_G.MDsHub.SelectedWeapon)
-                            ExecuteFastAttack()
-                            break
-                        end
-                    end
-                end
-                
-                -- Desafio do Shark (Sea Beast)
-                if race == "Shark" or race == "Fishman" then
-                    local seaBeasts = Workspace._WorldOrigin:FindFirstChild("SeaBeasts") or Workspace:FindFirstChild("SeaBeast")
-                    if seaBeasts then
-                        for _, sb in pairs(seaBeasts:GetChildren()) do
-                            if sb:FindFirstChild("Humanoid") and sb.Humanoid.Health > 0 then
-                                GetRootPart().CFrame = sb.HumanoidRootPart.CFrame * CFrame.new(0, 35, 0)
-                                EquipWeapon(_G.MDsHub.SelectedWeapon)
-                                ExecuteFastAttack()
-                                break
-                            end
-                        end
-                    end
-                end
-                
-                -- Desafio do Mink (Labirinto - Teleporte para a saída)
-                if race == "Mink" then
-                    for _, door in pairs(Workspace:GetDescendants()) do
-                        if door.Name == "ExitDoor" or door.Name == "Exit" then
-                            GetRootPart().CFrame = door.CFrame
-                        end
-                    end
-                end
-                
-                -- Desafio do Angel (Nuvens - Teleporte para a plataforma final)
-                if race == "Angel" then
-                    for _, cloud in pairs(Workspace:GetDescendants()) do
-                        if cloud.Name:find("Goal") or cloud.Name:find("Finish") then
-                            GetRootPart().CFrame = cloud.CFrame * CFrame.new(0, 5, 0)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- 6. Treinar V4 (Transformação Automática em Batalha)
-task.spawn(function()
-    while task.wait(0.3) do
-        if _G.MDsHub.AutoTrainV4 then
-            pcall(function()
-                local char = GetCharacter()
-                if char:FindFirstChild("RaceEnergy") and char.RaceEnergy.Value >= 100 then
-                    VirtualUser:CaptureController()
-                    VirtualUser:SetKeyDown("0x79") -- 'y'
-                    task.wait(0.05)
-                    VirtualUser:SetKeyUp("0x79")
-                end
-            end)
-        end
-    end
-end)
-
-----------------------------------------------------------------------
--- AUTO STATS & AUTO STORE FRUITS
-----------------------------------------------------------------------
-
-task.spawn(function()
-    while task.wait(0.5) do
-        pcall(function()
-            local points = _G.MDsHub.StatPoints
-            if _G.MDsHub.AutoMelee then ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Melee", points) end
-            if _G.MDsHub.AutoDefense then ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Defense", points) end
-            if _G.MDsHub.AutoSword then ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Sword", points) end
-            if _G.MDsHub.AutoGun then ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Gun", points) end
-            if _G.MDsHub.AutoFruit then ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", "Demon Fruit", points) end
-        end)
-    end
-end)
-
+-- Auto Store Fruits
 task.spawn(function()
     while task.wait(1.5) do
         if _G.MDsHub.AutoStoreFruits then
@@ -716,279 +548,492 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------------
--- BLACK SCREEN / AFK SAVER (BANANA HUB SIGNATURE FEATURE)
+-- INTERFACE GRÁFICA NATIVA E COMPLETA (MDs HUB UI ENGINE)
 ----------------------------------------------------------------------
 
-local function SetAFKBlackScreen(enabled)
+local function BuildMDsHubScreenGUI()
+    -- Destrói instância anterior se existir
     pcall(function()
-        RunService:Set3dRenderingEnabled(not enabled)
-        if enabled then
-            Notify("AFK Saver", "Modo tela preta ativado! Economizando CPU/GPU.", 4)
-        else
-            Notify("AFK Saver", "Renderização 3D restaurada!", 4)
+        if CoreGui:FindFirstChild("MDs_Hub_ScreenGui") then
+            CoreGui.MDs_Hub_ScreenGui:Destroy()
+        end
+        if LocalPlayer.PlayerGui:FindFirstChild("MDs_Hub_ScreenGui") then
+            LocalPlayer.PlayerGui.MDs_Hub_ScreenGui:Destroy()
         end
     end)
-end
 
-----------------------------------------------------------------------
--- INTERFACE DE USUÁRIO (BANANA HUB INSPIRED UI)
-----------------------------------------------------------------------
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "MDs_Hub_ScreenGui"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local function CreateMDsHubUI()
-    local RedzLib = nil
-    local success, _ = pcall(function()
-        RedzLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/BloxFruits/main/redzLib"))()
+    -- Proteção de Gui (Synapse / Delta / Solara)
+    if gethui then
+        ScreenGui.Parent = gethui()
+    elseif syn and syn.protect_gui then
+        syn.protect_gui(ScreenGui)
+        ScreenGui.Parent = CoreGui
+    else
+        pcall(function() ScreenGui.Parent = CoreGui end)
+        if not ScreenGui.Parent then
+            ScreenGui.Parent = LocalPlayer.PlayerGui
+        end
+    end
+
+    -- Botão Flutuante para Abrir/Fechar (Essencial para Mobile)
+    local OpenCloseButton = Instance.new("ImageButton")
+    OpenCloseButton.Name = "MDs_FloatingIcon"
+    OpenCloseButton.Size = UDim2.new(0, 50, 0, 50)
+    OpenCloseButton.Position = UDim2.new(0.02, 0, 0.45, 0)
+    OpenCloseButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    OpenCloseButton.Image = "rbxassetid://4483345998"
+    OpenCloseButton.Active = true
+    OpenCloseButton.Draggable = true
+    OpenCloseButton.Parent = ScreenGui
+
+    local OpenCloseCorner = Instance.new("UICorner")
+    OpenCloseCorner.CornerRadius = UDim.new(1, 0)
+    OpenCloseCorner.Parent = OpenCloseButton
+
+    local OpenCloseStroke = Instance.new("UIStroke")
+    OpenCloseStroke.Color = Color3.fromRGB(255, 200, 0) -- Dourado Banana
+    OpenCloseStroke.Thickness = 2.5
+    OpenCloseStroke.Parent = OpenCloseButton
+
+    -- Janela Principal
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(0, 600, 0, 360)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -180)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    MainFrame.ClipsDescendants = true
+    MainFrame.Parent = ScreenGui
+
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, 10)
+    MainCorner.Parent = MainFrame
+
+    local MainStroke = Instance.new("UIStroke")
+    MainStroke.Color = Color3.fromRGB(255, 200, 0)
+    MainStroke.Thickness = 1.5
+    MainStroke.Parent = MainFrame
+
+    -- Cabeçalho (Header)
+    local Header = Instance.new("Frame")
+    Header.Name = "Header"
+    Header.Size = UDim2.new(1, 0, 0, 45)
+    Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Header.BorderSizePixel = 0
+    Header.Parent = MainFrame
+
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+    TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = "🍌 MDs HUB | v4.5"
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+    TitleLabel.TextSize = 18
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Parent = Header
+
+    local SubTitleLabel = Instance.new("TextLabel")
+    SubTitleLabel.Size = UDim2.new(0, 200, 1, 0)
+    SubTitleLabel.Position = UDim2.new(0, 160, 0, 0)
+    SubTitleLabel.BackgroundTransparency = 1
+    SubTitleLabel.Text = "• Banana Pro Edition"
+    SubTitleLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    SubTitleLabel.TextSize = 13
+    SubTitleLabel.Font = Enum.Font.Gotham
+    SubTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    SubTitleLabel.Parent = Header
+
+    -- Botão Fechar / Minimizar no Cabeçalho
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+    CloseBtn.Position = UDim2.new(1, -40, 0, 8)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    CloseBtn.Text = "—"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseBtn.TextSize = 16
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.Parent = Header
+
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 6)
+    CloseCorner.Parent = CloseBtn
+
+    -- Alternar Visibilidade da UI
+    local function ToggleUI()
+        MainFrame.Visible = not MainFrame.Visible
+    end
+    OpenCloseButton.MouseButton1Click:Connect(ToggleUI)
+    CloseBtn.MouseButton1Click:Connect(ToggleUI)
+
+    -- Barra Lateral de Abas (Sidebar)
+    local Sidebar = Instance.new("ScrollingFrame")
+    Sidebar.Name = "Sidebar"
+    Sidebar.Size = UDim2.new(0, 140, 1, -45)
+    Sidebar.Position = UDim2.new(0, 0, 0, 45)
+    Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+    Sidebar.BorderSizePixel = 0
+    Sidebar.ScrollBarThickness = 2
+    Sidebar.Parent = MainFrame
+
+    local SidebarLayout = Instance.new("UIListLayout")
+    SidebarLayout.Padding = UDim.new(0, 4)
+    SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    SidebarLayout.Parent = Sidebar
+
+    local SidebarPadding = Instance.new("UIPadding")
+    SidebarPadding.PaddingTop = UDim.new(0, 8)
+    SidebarPadding.Parent = Sidebar
+
+    -- Área de Conteúdo (Content Container)
+    local ContentContainer = Instance.new("Frame")
+    ContentContainer.Name = "ContentContainer"
+    ContentContainer.Size = UDim2.new(1, -140, 1, -45)
+    ContentContainer.Position = UDim2.new(0, 140, 0, 45)
+    ContentContainer.BackgroundTransparency = 1
+    ContentContainer.Parent = MainFrame
+
+    -- Gerenciador de Abas e Elementos
+    local Tabs = {}
+    local CurrentTab = nil
+
+    local function CreateTab(name, icon)
+        local TabButton = Instance.new("TextButton")
+        TabButton.Name = "Tab_" .. name
+        TabButton.Size = UDim2.new(0, 125, 0, 32)
+        TabButton.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+        TabButton.Text = (icon or "•") .. "  " .. name
+        TabButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+        TabButton.TextSize = 13
+        TabButton.Font = Enum.Font.GothamSemibold
+        TabButton.TextXAlignment = Enum.TextXAlignment.Left
+        TabButton.Parent = Sidebar
+
+        local TabBtnPadding = Instance.new("UIPadding")
+        TabBtnPadding.PaddingLeft = UDim.new(0, 10)
+        TabBtnPadding.Parent = TabButton
+
+        local TabBtnCorner = Instance.new("UICorner")
+        TabBtnCorner.CornerRadius = UDim.new(0, 6)
+        TabBtnCorner.Parent = TabButton
+
+        local TabPage = Instance.new("ScrollingFrame")
+        TabPage.Name = "Page_" .. name
+        TabPage.Size = UDim2.new(1, 0, 1, 0)
+        TabPage.BackgroundTransparency = 1
+        TabPage.ScrollBarThickness = 4
+        TabPage.ScrollBarImageColor3 = Color3.fromRGB(255, 200, 0)
+        TabPage.Visible = false
+        TabPage.Parent = ContentContainer
+
+        local PageLayout = Instance.new("UIListLayout")
+        PageLayout.Padding = UDim.new(0, 6)
+        PageLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        PageLayout.Parent = TabPage
+
+        local PagePadding = Instance.new("UIPadding")
+        PagePadding.PaddingTop = UDim.new(0, 10)
+        PagePadding.PaddingBottom = UDim.new(0, 10)
+        PagePadding.Parent = TabPage
+
+        TabButton.MouseButton1Click:Connect(function()
+            for _, t in pairs(Tabs) do
+                t.Page.Visible = false
+                t.Button.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+                t.Button.TextColor3 = Color3.fromRGB(180, 180, 180)
+            end
+            TabPage.Visible = true
+            TabButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+            TabButton.TextColor3 = Color3.fromRGB(20, 20, 20)
+            CurrentTab = TabPage
+        end)
+
+        local tabObj = {
+            Button = TabButton,
+            Page = TabPage,
+            
+            -- Adicionar Toggle
+            AddToggle = function(self, labelText, defaultState, callback)
+                local ToggleFrame = Instance.new("Frame")
+                ToggleFrame.Size = UDim2.new(0.94, 0, 0, 36)
+                ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+                ToggleFrame.Parent = TabPage
+
+                local Corner = Instance.new("UICorner")
+                Corner.CornerRadius = UDim.new(0, 6)
+                Corner.Parent = ToggleFrame
+
+                local Label = Instance.new("TextLabel")
+                Label.Size = UDim2.new(0.75, 0, 1, 0)
+                Label.Position = UDim2.new(0, 10, 0, 0)
+                Label.BackgroundTransparency = 1
+                Label.Text = labelText
+                Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+                Label.TextSize = 13
+                Label.Font = Enum.Font.Gotham
+                Label.TextXAlignment = Enum.TextXAlignment.Left
+                Label.Parent = ToggleFrame
+
+                local Switch = Instance.new("TextButton")
+                Switch.Size = UDim2.new(0, 44, 0, 22)
+                Switch.Position = UDim2.new(1, -54, 0.5, -11)
+                Switch.BackgroundColor3 = defaultState and Color3.fromRGB(255, 200, 0) or Color3.fromRGB(45, 45, 55)
+                Switch.Text = defaultState and "ON" or "OFF"
+                Switch.TextColor3 = defaultState and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(200, 200, 200)
+                Switch.TextSize = 10
+                Switch.Font = Enum.Font.GothamBold
+                Switch.Parent = ToggleFrame
+
+                local SwitchCorner = Instance.new("UICorner")
+                SwitchCorner.CornerRadius = UDim.new(0, 11)
+                SwitchCorner.Parent = Switch
+
+                local state = defaultState
+                Switch.MouseButton1Click:Connect(function()
+                    state = not state
+                    Switch.BackgroundColor3 = state and Color3.fromRGB(255, 200, 0) or Color3.fromRGB(45, 45, 55)
+                    Switch.Text = state and "ON" or "OFF"
+                    Switch.TextColor3 = state and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(200, 200, 200)
+                    if callback then callback(state) end
+                end)
+            end,
+
+            -- Adicionar Botão
+            AddButton = function(self, labelText, callback)
+                local Btn = Instance.new("TextButton")
+                Btn.Size = UDim2.new(0.94, 0, 0, 34)
+                Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+                Btn.Text = labelText
+                Btn.TextColor3 = Color3.fromRGB(255, 215, 0)
+                Btn.TextSize = 13
+                Btn.Font = Enum.Font.GothamSemibold
+                Btn.Parent = TabPage
+
+                local BtnCorner = Instance.new("UICorner")
+                BtnCorner.CornerRadius = UDim.new(0, 6)
+                BtnCorner.Parent = Btn
+
+                local BtnStroke = Instance.new("UIStroke")
+                BtnStroke.Color = Color3.fromRGB(60, 60, 75)
+                BtnStroke.Thickness = 1
+                BtnStroke.Parent = Btn
+
+                Btn.MouseButton1Click:Connect(function()
+                    if callback then callback() end
+                end)
+            end,
+
+            -- Adicionar Seção / Título
+            AddSection = function(self, sectionText)
+                local SectionLabel = Instance.new("TextLabel")
+                SectionLabel.Size = UDim2.new(0.94, 0, 0, 24)
+                SectionLabel.BackgroundTransparency = 1
+                SectionLabel.Text = "── " .. sectionText .. " ──"
+                SectionLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+                SectionLabel.TextSize = 12
+                SectionLabel.Font = Enum.Font.GothamBold
+                SectionLabel.Parent = TabPage
+            end,
+
+            -- Adicionar Parágrafo informativo
+            AddParagraph = function(self, title, desc)
+                local Frame = Instance.new("Frame")
+                Frame.Size = UDim2.new(0.94, 0, 0, 36)
+                Frame.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+                Frame.Parent = TabPage
+
+                local Corner = Instance.new("UICorner")
+                Corner.CornerRadius = UDim.new(0, 6)
+                Corner.Parent = Frame
+
+                local T = Instance.new("TextLabel")
+                T.Size = UDim2.new(1, -20, 1, 0)
+                T.Position = UDim2.new(0, 10, 0, 0)
+                T.BackgroundTransparency = 1
+                T.Text = title .. "  " .. (desc or "")
+                T.TextColor3 = Color3.fromRGB(220, 220, 220)
+                T.TextSize = 12
+                T.Font = Enum.Font.Gotham
+                T.TextXAlignment = Enum.TextXAlignment.Left
+                T.Parent = Frame
+            end
+        }
+
+        table.insert(Tabs, tabObj)
+        return tabObj
+    end
+
+    ------------------------------------------------------------------
+    -- CRIAÇÃO DAS ABAS DA UI
+    ------------------------------------------------------------------
+
+    -- 1. TAB INÍCIO
+    local TabHome = CreateTab("Início", "🏠")
+    TabHome:AddSection("Status da Conta")
+    TabHome:AddParagraph("Jogador:", LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ")")
+    TabHome:AddParagraph("Raça Atual:", GetPlayerRace())
+    TabHome:AddParagraph("Sea Atual:", "Sea " .. tostring(GetCurrentSea()))
+    TabHome:AddParagraph("Anti-AFK:", "Ativo 24/7 (Protegido)")
+    TabHome:AddSection("Economia de Recursos")
+    TabHome:AddToggle("Modo AFK / Black Screen (Salva CPU/Bateria)", false, function(v)
+        _G.MDsHub.BlackScreenAFK = v
+        RunService:Set3dRenderingEnabled(not v)
+    end)
+    TabHome:AddButton("Copiar Link do Repositório GitHub", function()
+        if setclipboard then
+            setclipboard("https://github.com/evolucaomente27-bot/MDs-Blox-HUB")
+            Notify("MDs HUB", "Link copiado com sucesso!")
+        end
     end)
 
-    if success and RedzLib then
-        local Window = RedzLib:MakeWindow({
-            Title = "MDs HUB | Banana Edition v4.0",
-            SubTitle = "Ultra Fast Farm & Race V4 Engine",
-            SaveFolder = "MDsHub_BananaConfig"
-        })
+    -- 2. TAB AUTO FARM
+    local TabFarm = CreateTab("Auto Farm", "⚔️")
+    TabFarm:AddSection("Configuração do Farm")
+    TabFarm:AddToggle("Auto Farm Level (Principal)", false, function(v)
+        _G.MDsHub.AutoFarm = v
+        if not v then StopTween() end
+    end)
+    TabFarm:AddToggle("Ultra Fast Attack (Banana Method)", true, function(v)
+        _G.MDsHub.FastAttack = v
+    end)
+    TabFarm:AddToggle("Bring Mobs (Agrupar Inimigos)", true, function(v)
+        _G.MDsHub.BringMobs = v
+    end)
+    TabFarm:AddToggle("Auto Buso Haki (Armamento)", true, function(v)
+        _G.MDsHub.AutoBusoHaki = v
+    end)
 
-        -- TAB 1: Início
-        local TabHome = Window:MakeTab({"Início", "house"})
-        TabHome:AddSection({"Informações da Conta"})
-        TabHome:AddParagraph({"Jogador:", LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ")"})
-        TabHome:AddParagraph({"Raça:", GetPlayerRace()})
-        TabHome:AddParagraph({"Sea:", "Sea " .. tostring(GetCurrentSea())})
-        TabHome:AddParagraph({"Anti-AFK:", "Proteção 24/7 Ativa"})
-        
-        TabHome:AddSection({"Opções Rápidas"})
-        TabHome:AddToggle({
-            Name = "Modo AFK / Tela Preta (Economiza Bateria/CPU)",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.BlackScreenAFK = val
-                SetAFKBlackScreen(val)
+    -- 3. TAB BOSSES (SEA 3)
+    local TabBoss = CreateTab("Bosses", "👑")
+    TabBoss:AddSection("Eventos & Chefes Especiais")
+    TabBoss:AddToggle("Auto Cake Prince / Dough King (500 Mobs)", false, function(v)
+        _G.MDsHub.AutoCakePrince = v
+        if not v then StopTween() end
+    end)
+    TabBoss:AddToggle("Auto Elite Hunter (Sea 3)", false, function(v)
+        _G.MDsHub.AutoEliteHunter = v
+        if not v then StopTween() end
+    end)
+
+    -- 4. TAB RAÇAS (V1 - V4)
+    local TabRace = CreateTab("Raças V1-V4", "🧬")
+    TabRace:AddSection("Raça V2 & V3 (Sea 2)")
+    TabRace:AddToggle("Auto Raça V2 (Alquimista + 3 Flores)", false, function(v)
+        _G.MDsHub.AutoRaceV2 = v
+        _G.MDsHub.AutoCollectBlueFlower = v
+        _G.MDsHub.AutoCollectRedFlower = v
+        _G.MDsHub.AutoFarmYellowFlower = v
+        if not v then StopTween() end
+    end)
+    TabRace:AddToggle("Auto Raça V3 (Arowe Quests)", false, function(v)
+        _G.MDsHub.AutoRaceV3 = v
+        if not v then StopTween() end
+    end)
+    TabRace:AddSection("Raça V4 (Templo do Tempo & Mirage)")
+    TabRace:AddToggle("Alerta de Mirage & Teleporte ao Pico", true, function(v)
+        _G.MDsHub.AutoMirageNotifier = v
+        _G.MDsHub.AutoTeleportMiragePeak = v
+    end)
+    TabRace:AddToggle("Auto Olhar para Lua Cheia (Ressonância V3)", false, function(v)
+        _G.MDsHub.AutoLookAtMoon = v
+    end)
+    TabRace:AddToggle("Auto Coletar Engrenagem Azul (Blue Gear)", false, function(v)
+        _G.MDsHub.AutoFindBlueGear = v
+    end)
+    TabRace:AddButton("Puxar Alavanca do Templo (Pull Lever)", function()
+        TweenTo(RaceData.TempleOfTime.Lever)
+        task.wait(1.5)
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v.Name == "Lever" and v:IsA("ClickDetector") then
+                fireclickdetector(v)
             end
-        })
+        end
+        Notify("Templo do Tempo", "Alavanca acionada!")
+    end)
+    TabRace:AddButton("Teleportar para a Porta da sua Raça", function()
+        local r = GetPlayerRace()
+        local cf = RaceData.TempleOfTime.Doors[r] or RaceData.TempleOfTime.Doors["Human"]
+        TweenTo(cf)
+        Notify("Templo", "Viajando para porta: " .. r)
+    end)
+    TabRace:AddToggle("Auto Completar Desafio do Trial", false, function(v)
+        _G.MDsHub.AutoCompleteTrial = v
+    end)
+    TabRace:AddToggle("Auto Treinar Despertar V4 (Transformar)", false, function(v)
+        _G.MDsHub.AutoTrainV4 = v
+    end)
 
-        -- TAB 2: Auto Farm
-        local TabFarm = Window:MakeTab({"Auto Farm", "swords"})
-        TabFarm:AddSection({"Combate & Armas"})
-        
-        TabFarm:AddDropdown({
-            Name = "Arma do Farm",
-            Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
-            Default = "Melee",
-            Callback = function(val)
-                _G.MDsHub.SelectedWeapon = val
-            end
-        })
-        
-        TabFarm:AddToggle({
-            Name = "Auto Farm Level (Principal)",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.AutoFarm = val
-                if not val then StopTween() end
-            end
-        })
+    -- 5. TAB FRUTAS
+    local TabFruit = CreateTab("Frutas", "🍎")
+    TabFruit:AddSection("Gerenciamento de Frutas")
+    TabFruit:AddToggle("Auto Armazenar Frutas (Store)", true, function(v)
+        _G.MDsHub.AutoStoreFruits = v
+    end)
+    TabFruit:AddButton("Comprar Fruta Aleatória (Cousin)", function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+        Notify("Frutas", "Tentativa de compra realizada!")
+    end)
 
-        TabFarm:AddToggle({
-            Name = "Ultra Fast Attack (Banana Method)",
-            Default = true,
-            Callback = function(val)
-                _G.MDsHub.FastAttack = val
-            end
-        })
+    -- 6. TAB STATUS
+    local TabStats = CreateTab("Status", "📊")
+    TabStats:AddSection("Distribuição Automática")
+    TabStats:AddToggle("Auto Melee", false, function(v) _G.MDsHub.AutoMelee = v end)
+    TabStats:AddToggle("Auto Defense", false, function(v) _G.MDsHub.AutoDefense = v end)
+    TabStats:AddToggle("Auto Sword", false, function(v) _G.MDsHub.AutoSword = v end)
+    TabStats:AddToggle("Auto Gun", false, function(v) _G.MDsHub.AutoGun = v end)
+    TabStats:AddToggle("Auto Demon Fruit", false, function(v) _G.MDsHub.AutoFruit = v end)
 
-        TabFarm:AddToggle({
-            Name = "Bring Mobs (Agrupar Inimigos)",
-            Default = true,
-            Callback = function(val)
-                _G.MDsHub.BringMobs = val
-            end
-        })
+    -- 7. TAB JOGADOR & MISC
+    local TabPlayer = CreateTab("Jogador", "🏃")
+    TabPlayer:AddSection("Habilidades do Jogador")
+    TabPlayer:AddToggle("NoClip (Atravessar Paredes)", false, function(v) _G.MDsHub.NoClip = v end)
+    TabPlayer:AddToggle("Pulo Infinito", false, function(v) _G.MDsHub.InfiniteJump = v end)
+    TabPlayer:AddToggle("Velocidade 100 (WalkSpeed)", false, function(v)
+        _G.MDsHub.CustomSpeed = v
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = v and 100 or 16
+        end
+    end)
 
-        TabFarm:AddToggle({
-            Name = "Auto Buso Haki (Armamento)",
-            Default = true,
-            Callback = function(val)
-                _G.MDsHub.AutoBusoHaki = val
-            end
-        })
-
-        TabFarm:AddSlider({
-            Name = "Distância do Farm",
-            Min = 10,
-            Max = 40,
-            Increase = 1,
-            Default = 25,
-            Callback = function(val)
-                _G.MDsHub.FarmDistance = val
-            end
-        })
-
-        -- TAB 3: Sea 3 Bosses & Eventos
-        local TabBoss = Window:MakeTab({"Bosses & Eventos", "skull"})
-        TabBoss:AddSection({"Chefes Especiais (Sea 3)"})
-        
-        TabBoss:AddToggle({
-            Name = "Auto Cake Prince / Dough King (500 Mobs)",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.AutoCakePrince = val
-                if not val then StopTween() end
-            end
-        })
-
-        TabBoss:AddToggle({
-            Name = "Auto Elite Hunter (Deandre, Diablo, Urban)",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.AutoEliteHunter = val
-                if not val then StopTween() end
-            end
-        })
-
-        -- TAB 4: Sistema de Raças (V1 - V4)
-        local TabRace = Window:MakeTab({"Raças (V1-V4)", "dna"})
-        
-        TabRace:AddSection({"Raça V2 & V3 (Sea 2)"})
-        TabRace:AddToggle({
-            Name = "Auto Raça V2 (Alquimista + Flores)",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.AutoRaceV2 = val
-                _G.MDsHub.AutoCollectBlueFlower = val
-                _G.MDsHub.AutoCollectRedFlower = val
-                _G.MDsHub.AutoFarmYellowFlower = val
-                if not val then StopTween() end
-            end
-        })
-
-        TabRace:AddToggle({
-            Name = "Auto Raça V3 (Arowe)",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.AutoRaceV3 = val
-                if not val then StopTween() end
-            end
-        })
-
-        TabRace:AddSection({"Raça V4 (Templo do Tempo & Mirage)"})
-        TabRace:AddToggle({
-            Name = "Alerta de Mirage & Teleporte ao Pico",
-            Default = true,
-            Callback = function(val)
-                _G.MDsHub.AutoMirageNotifier = val
-                _G.MDsHub.AutoTeleportMiragePeak = val
-            end
-        })
-
-        TabRace:AddToggle({
-            Name = "Auto Olhar para Lua Cheia (Resonância V3)",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.AutoLookAtMoon = val
-            end
-        })
-
-        TabRace:AddToggle({
-            Name = "Auto Achar Engrenagem Azul (Gear Scanner)",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.AutoFindBlueGear = val
-            end
-        })
-
-        TabRace:AddButton({"Puxar Alavanca do Templo (Pull Lever)", function()
-            PullTempleLever()
-        end})
-
-        TabRace:AddButton({"Teleportar para a Porta da sua Raça", function()
-            local race = GetPlayerRace()
-            local doorCF = RaceData.TempleOfTime.Doors[race] or RaceData.TempleOfTime.Doors["Human"]
-            TweenTo(doorCF)
-            Notify("Templo do Tempo", "Viajando para a porta: " .. race)
-        end})
-
-        TabRace:AddToggle({
-            Name = "Auto Completar Desafio do Trial",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.AutoCompleteTrial = val
-            end
-        })
-
-        TabRace:AddToggle({
-            Name = "Auto Treinar Despertar V4 (Transformar)",
-            Default = false,
-            Callback = function(val)
-                _G.MDsHub.AutoTrainV4 = val
-            end
-        })
-
-        -- TAB 5: Frutas
-        local TabFruit = Window:MakeTab({"Frutas", "cherry"})
-        TabFruit:AddSection({"Gerenciamento de Frutas"})
-        
-        TabFruit:AddToggle({
-            Name = "Auto Armazenar Frutas (Store)",
-            Default = true,
-            Callback = function(val)
-                _G.MDsHub.AutoStoreFruits = val
-            end
-        })
-
-        TabFruit:AddButton({"Comprar Fruta Aleatória (Cousin)", function()
-            ReplicatedStorage.Remotes.CommF_:InvokeServer("Cousin", "Buy")
-            Notify("Frutas", "Compra de fruta solicitada!")
-        end})
-
-        -- TAB 6: Status
-        local TabStats = Window:MakeTab({"Status", "bar-chart-2"})
-        TabStats:AddSection({"Distribuidor Automático de Pontos"})
-        
-        TabStats:AddSlider({
-            Name = "Pontos por ciclo",
-            Min = 1,
-            Max = 10,
-            Increase = 1,
-            Default = 3,
-            Callback = function(val)
-                _G.MDsHub.StatPoints = val
-            end
-        })
-
-        TabStats:AddToggle({Name = "Auto Melee", Default = false, Callback = function(v) _G.MDsHub.AutoMelee = v end})
-        TabStats:AddToggle({Name = "Auto Defense", Default = false, Callback = function(v) _G.MDsHub.AutoDefense = v end})
-        TabStats:AddToggle({Name = "Auto Sword", Default = false, Callback = function(v) _G.MDsHub.AutoSword = v end})
-        TabStats:AddToggle({Name = "Auto Gun", Default = false, Callback = function(v) _G.MDsHub.AutoGun = v end})
-        TabStats:AddToggle({Name = "Auto Demon Fruit", Default = false, Callback = function(v) _G.MDsHub.AutoFruit = v end})
-
-        -- TAB 7: Configurações & Otimização
-        local TabSettings = Window:MakeTab({"Config & FPS", "settings"})
-        TabSettings:AddSection({"Performance"})
-        
-        TabSettings:AddButton({"Boost de FPS (Remover Texturas)", function()
-            pcall(function()
-                for _, v in pairs(Workspace:GetDescendants()) do
-                    if v:IsA("BasePart") and not v:IsA("MeshPart") then
-                        v.Material = Enum.Material.SmoothPlastic
-                    elseif v:IsA("Decal") or v:IsA("Texture") then
-                        v:Destroy()
-                    elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                        v.Enabled = false
-                    end
+    -- 8. TAB CONFIG & OTIMIZAÇÃO
+    local TabConfig = CreateTab("Config", "⚙️")
+    TabConfig:AddSection("Otimização & Servidor")
+    TabConfig:AddButton("Boost de FPS (Remover Texturas)", function()
+        pcall(function()
+            for _, v in pairs(Workspace:GetDescendants()) do
+                if v:IsA("BasePart") and not v:IsA("MeshPart") then
+                    v.Material = Enum.Material.SmoothPlastic
+                elseif v:IsA("Decal") or v:IsA("Texture") then
+                    v:Destroy()
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    v.Enabled = false
                 end
-                Lighting.GlobalShadows = false
-                Notify("FPS Boost", "Otimização de texturas e sombras concluída!")
-            end)
-        end})
+            end
+            Lighting.GlobalShadows = false
+            Notify("FPS Boost", "Texturas pesadas removidas com sucesso!")
+        end)
+    end)
+    TabConfig:AddButton("Reconectar ao Servidor (Rejoin)", function()
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+    end)
 
-        TabSettings:AddButton({"Reconectar Servidor (Rejoin)", function()
-            TeleportService:Teleport(game.PlaceId, LocalPlayer)
-        end})
-
-        Notify("MDs HUB", "Banana Edition v4.0 carregada com sucesso!", 5)
-    else
-        Notify("MDs HUB", "Executado em modo Headless/Seguro.")
+    -- Abre a primeira aba por padrão
+    if Tabs[1] then
+        Tabs[1].Page.Visible = true
+        Tabs[1].Button.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+        Tabs[1].Button.TextColor3 = Color3.fromRGB(20, 20, 20)
     end
+
+    Notify("MDs HUB", "Interface Gráfica Nativa Carregada! Clique no ícone para abrir/fechar.", 5)
 end
 
--- Inicialização
-task.spawn(CreateMDsHubUI)
+-- Inicia a Interface
+task.spawn(BuildMDsHubScreenGUI)
