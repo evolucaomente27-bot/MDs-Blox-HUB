@@ -54,9 +54,11 @@ _G.MDsHub = {
     AutoFarmNearest = false,
     AutoChests = false,
     SelectedWeapon = "Melee", -- Melee, Sword, Gun, Blox Fruit
+    SelectedItem = "Auto",
     FarmDistance = 25,
     BringMobs = true,
     BringMobsRadius = 280,
+    AutoBeli = false,
     
     -- Ultra Fast Attack
     FastAttack = true,
@@ -72,6 +74,14 @@ _G.MDsHub = {
     
     -- Frutas
     AutoStoreFruits = true,
+    AutoCollectFruits = false,
+    AutoBuyRandomFruit = false,
+    FruitBuyInterval = 300,
+
+    -- PvP (opt-in)
+    AutoPVPCombo = false,
+    PVPComboStyle = "Sword",
+    PVPTargetRange = 250,
     
     -- Status (Stats)
     AutoMelee = false,
@@ -99,6 +109,12 @@ _G.MDsHub = {
     AutoFindBlueGear = false,
     AutoCompleteTrial = false,
     AutoTrainV4 = false,
+    AutoTempleV4 = false,
+
+    -- Espadas lendárias
+    AutoTTKMastery = false,
+    AutoCDKMastery = false,
+    PreferredSword = "Auto",
 
     -- Multi-Hubs Integrados
     AutoLoadQuantum = false,
@@ -116,6 +132,8 @@ _G.MDsHub = {
     
     -- Teleport & Performance
     TweenSpeed = 280,
+    TravelStepDistance = 350,
+    TravelStepDelay = 0.12,
     IsTweening = false,
     BlackScreenAFK = false,
     FPSBoost = false
@@ -123,6 +141,15 @@ _G.MDsHub = {
 
 local CurrentTween = nil
 local BodyVelocityHolder = nil
+local IsTraveling = false
+local DefaultLighting = {
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    FogEnd = Lighting.FogEnd,
+    GlobalShadows = Lighting.GlobalShadows,
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient
+}
 
 ----------------------------------------------------------------------
 -- FUNÇÕES DE SUPORTE & TWEEN ENGINE
@@ -189,6 +216,40 @@ local function TweenTo(targetCFrame)
     return CurrentTween
 end
 
+-- Movimento em etapas: reduz saltos longos e permite cancelar a viagem com segurança.
+local function TravelTo(targetCFrame)
+    if IsTraveling then return false end
+
+    local root = GetRootPart()
+    if not root or not targetCFrame then return false end
+
+    IsTraveling = true
+    local startedAt = root.CFrame
+    local distance = (startedAt.Position - targetCFrame.Position).Magnitude
+    local stepDistance = math.max(100, _G.MDsHub.TravelStepDistance or 350)
+    local steps = math.max(1, math.ceil(distance / stepDistance))
+    local completed = true
+
+    for step = 1, steps do
+        local segmentCFrame = startedAt:Lerp(targetCFrame, step / steps)
+        local tween = TweenTo(segmentCFrame)
+        if not tween then
+            completed = false
+            break
+        end
+
+        local playbackState = tween.Completed:Wait()
+        if playbackState ~= Enum.PlaybackState.Completed then
+            completed = false
+            break
+        end
+        task.wait(_G.MDsHub.TravelStepDelay or 0.12)
+    end
+
+    IsTraveling = false
+    return completed
+end
+
 local function StopTween()
     if CurrentTween then
         CurrentTween:Cancel()
@@ -199,6 +260,41 @@ local function StopTween()
         BodyVelocityHolder = nil
     end
     _G.MDsHub.IsTweening = false
+    IsTraveling = false
+end
+
+local function StopAllAutomations()
+    local settings = _G.MDsHub
+    for _, option in ipairs({
+        "AutoFarm", "AutoFarmNearest", "AutoChests", "AutoEliteHunter",
+        "AutoCakePrince", "AutoDoughKing", "AutoRaceV2", "AutoRaceV3",
+        "AutoCollectBlueFlower", "AutoCollectRedFlower", "AutoFarmYellowFlower",
+        "AutoLookAtMoon", "AutoFindBlueGear", "AutoCompleteTrial", "AutoTrainV4",
+        "AutoMelee", "AutoDefense", "AutoSword", "AutoGun", "AutoFruit",
+        "AutoBusoHaki", "AutoStoreFruits", "FastAttack", "AutoMirageNotifier",
+        "AutoTeleportMiragePeak", "AutoTempleV4", "AutoCompleteTrial",
+        "AutoTrainV4", "AutoTTKMastery", "AutoCDKMastery", "AutoBeli",
+        "AutoCollectFruits", "AutoBuyRandomFruit", "AutoPVPCombo"
+    }) do
+        settings[option] = false
+    end
+    StopTween()
+end
+
+local function SetFullBright(enabled)
+    _G.MDsHub.FullBright = enabled
+    if enabled then
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 14
+        Lighting.FogEnd = 100000
+        Lighting.GlobalShadows = false
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    else
+        for property, value in pairs(DefaultLighting) do
+            Lighting[property] = value
+        end
+    end
 end
 
 -- NoClip ativo durante teleporte e farm
@@ -208,6 +304,16 @@ RunService.Stepped:Connect(function()
             if part:IsA("BasePart") and part.CanCollide then
                 part.CanCollide = false
             end
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if _G.MDsHub.InfiniteJump then
+        local character = LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end
 end)
@@ -232,9 +338,68 @@ local function GetPlayerRace()
     return success and race or "Desconhecida"
 end
 
+local function GetOwnedToolNames()
+    local names, seen = {"Auto"}, {Auto = true}
+    for _, container in ipairs({LocalPlayer.Character, LocalPlayer.Backpack}) do
+        if container then
+            for _, item in ipairs(container:GetChildren()) do
+                if item:IsA("Tool") and not seen[item.Name] then
+                    seen[item.Name] = true
+                    table.insert(names, item.Name)
+                end
+            end
+        end
+    end
+    return names
+end
+
+local function EquipAnyItem()
+    local selectedItem = _G.MDsHub.SelectedItem
+    for _, container in ipairs({LocalPlayer.Character, LocalPlayer.Backpack}) do
+        if container and selectedItem ~= "Auto" then
+            local item = container:FindFirstChild(selectedItem)
+            if item and item:IsA("Tool") then
+                if item.Parent == LocalPlayer.Backpack then
+                    GetHumanoid():EquipTool(item)
+                end
+                return item
+            end
+        end
+    end
+
+    for _, container in ipairs({LocalPlayer.Character, LocalPlayer.Backpack}) do
+        if container then
+            local item = container:FindFirstChildOfClass("Tool")
+            if item then
+                if item.Parent == LocalPlayer.Backpack then
+                    GetHumanoid():EquipTool(item)
+                end
+                return item
+            end
+        end
+    end
+end
+
 local function EquipWeapon(weaponType)
     local char = GetCharacter()
     local backpack = LocalPlayer.Backpack
+    local preferredSword = _G.MDsHub.PreferredSword
+
+    if weaponType == "Any Item" then
+        return EquipAnyItem()
+    end
+
+    if weaponType == "Sword" and preferredSword and preferredSword ~= "Auto" then
+        for _, container in ipairs({char, backpack}) do
+            local preferredTool = container:FindFirstChild(preferredSword)
+            if preferredTool and preferredTool:IsA("Tool") then
+                if preferredTool.Parent == backpack then
+                    GetHumanoid():EquipTool(preferredTool)
+                end
+                return preferredTool
+            end
+        end
+    end
     
     for _, item in pairs(char:GetChildren()) do
         if item:IsA("Tool") and item:FindFirstChild("ToolTip") and item.ToolTip == weaponType then
@@ -393,6 +558,64 @@ local RaceData = {
     }
 }
 
+local function GetToolByName(toolName)
+    for _, container in ipairs({LocalPlayer.Character, LocalPlayer.Backpack}) do
+        if container then
+            local tool = container:FindFirstChild(toolName)
+            if tool and tool:IsA("Tool") then
+                return tool
+            end
+        end
+    end
+end
+
+local function GetToolMastery(toolName)
+    local tool = GetToolByName(toolName)
+    local level = tool and tool:FindFirstChild("Level")
+    return level and tonumber(level.Value) or 0
+end
+
+local function EquipNamedSword(toolName)
+    local tool = GetToolByName(toolName)
+    if tool and tool.Parent == LocalPlayer.Backpack then
+        GetHumanoid():EquipTool(tool)
+    end
+    return tool
+end
+
+local function SelectLowestMasterySword(swords)
+    local selectedSword = nil
+    local lowestMastery = math.huge
+    for _, swordName in ipairs(swords) do
+        if GetToolByName(swordName) then
+            local mastery = GetToolMastery(swordName)
+            if mastery < lowestMastery then
+                selectedSword = swordName
+                lowestMastery = mastery
+            end
+        end
+    end
+    return selectedSword
+end
+
+local function ActivateRaceV4()
+    pcall(function()
+        local virtualInput = game:GetService("VirtualInputManager")
+        virtualInput:SendKeyEvent(true, Enum.KeyCode.Y, false, game)
+        task.wait(0.08)
+        virtualInput:SendKeyEvent(false, Enum.KeyCode.Y, false, game)
+    end)
+end
+
+local function TravelToRaceTrialDoor()
+    local race = GetPlayerRace()
+    local door = RaceData.TempleOfTime.Doors[race] or RaceData.TempleOfTime.Doors.Human
+    if TravelTo(RaceData.TempleOfTime.Entrance) then
+        return TravelTo(door)
+    end
+    return false
+end
+
 ----------------------------------------------------------------------
 -- LOOP DE AUTO FARM & BRING MOBS
 ----------------------------------------------------------------------
@@ -484,6 +707,14 @@ local function ExecuteNewRedz()
     end)
 end
 
+local function ExecuteAllHubs()
+    Notify("Multi-Hub", "⚡ Carregando Quantum Onyx, Bacon Hub e Redz simultaneamente...", 4)
+    task.spawn(ExecuteQuantumOnyx)
+    task.spawn(ExecuteBaconHub)
+    task.spawn(ExecuteNewRedz)
+end
+
+
 ----------------------------------------------------------------------
 -- SEA 3 BOSSES & RAÇA V4 LOOPS
 ----------------------------------------------------------------------
@@ -562,12 +793,230 @@ task.spawn(function()
             pcall(function()
                 for _, obj in pairs(Workspace:GetDescendants()) do
                     if obj:IsA("MeshPart") and (obj.MeshId:find("10153114918") or obj.Name:find("Gear") or (obj:FindFirstChild("PointLight") and obj.Size.Magnitude < 10)) then
-                        TweenTo(obj.CFrame)
+                        TravelTo(obj.CFrame)
                         firetouchinterest(GetRootPart(), obj, 0)
                         Notify("Raça V4", "Engrenagem Azul encontrada e coletada!", 5)
                         _G.MDsHub.AutoFindBlueGear = false
                         break
                     end
+                end
+            end)
+        end
+    end
+end)
+
+-- Preparação e treino da Raça V4. A conclusão do Trial ainda depende dos
+-- requisitos do servidor (lua cheia, jogadores elegíveis e Trial aberto).
+task.spawn(function()
+    local lastTempleAttempt = 0
+    local lastTransformation = 0
+    while task.wait(1) do
+        if GetCurrentSea() == 3 then
+            local now = os.clock()
+            if (_G.MDsHub.AutoTempleV4 or _G.MDsHub.AutoCompleteTrial) and now - lastTempleAttempt >= 15 then
+                lastTempleAttempt = now
+                TravelToRaceTrialDoor()
+            end
+            if _G.MDsHub.AutoTrainV4 and now - lastTransformation >= 8 then
+                lastTransformation = now
+                ActivateRaceV4()
+            end
+        end
+    end
+end)
+
+-- Seleciona a espada com menor maestria para que o Auto Farm existente possa
+-- evoluir TTK ou CDK sem trocar de hub.
+task.spawn(function()
+    local ttkSwords = {"Saddi", "Shisui", "Wando"}
+    local cdkSwords = {"Yama", "Tushita"}
+    while task.wait(1) do
+        if _G.MDsHub.AutoTTKMastery then
+            local sword = SelectLowestMasterySword(ttkSwords)
+            if sword then
+                _G.MDsHub.SelectedWeapon = "Sword"
+                _G.MDsHub.PreferredSword = sword
+                EquipNamedSword(sword)
+            end
+        elseif _G.MDsHub.AutoCDKMastery then
+            local sword = SelectLowestMasterySword(cdkSwords)
+            if sword then
+                _G.MDsHub.SelectedWeapon = "Sword"
+                _G.MDsHub.PreferredSword = sword
+                EquipNamedSword(sword)
+            end
+        end
+    end
+end)
+
+-- O Cursed Skeleton Boss só recebe dano de Yama ou Tushita. Quando o chefe
+-- existir, usa uma das duas espadas e o sistema de ataque nativo.
+task.spawn(function()
+    while task.wait(0.5) do
+        if _G.MDsHub.AutoCDKMastery and GetCurrentSea() == 3 then
+            pcall(function()
+                local enemies = Workspace:FindFirstChild("Enemies")
+                local boss = enemies and (enemies:FindFirstChild("Cursed Skeleton Boss") or enemies:FindFirstChild("Cursed Skeleton"))
+                if boss and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 and boss:FindFirstChild("HumanoidRootPart") then
+                    local sword = SelectLowestMasterySword({"Yama", "Tushita"})
+                    if sword then
+                        _G.MDsHub.PreferredSword = sword
+                        TravelTo(boss.HumanoidRootPart.CFrame * CFrame.new(0, 22, 0))
+                        EquipNamedSword(sword)
+                        ExecuteFastAttack()
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+local function FindNearestMob()
+    local root = GetRootPart()
+    local enemies = Workspace:FindFirstChild("Enemies")
+    if not root or not enemies then return end
+
+    local nearestMob, nearestDistance = nil, math.huge
+    for _, mob in ipairs(enemies:GetChildren()) do
+        local humanoid = mob:FindFirstChildOfClass("Humanoid")
+        local mobRoot = mob:FindFirstChild("HumanoidRootPart")
+        if humanoid and humanoid.Health > 0 and mobRoot then
+            local distance = (root.Position - mobRoot.Position).Magnitude
+            if distance < nearestDistance then
+                nearestMob, nearestDistance = mob, distance
+            end
+        end
+    end
+    return nearestMob
+end
+
+-- Beli vem da derrota de NPCs; este modo prioriza o inimigo vivo mais próximo.
+task.spawn(function()
+    while task.wait(0.4) do
+        if _G.MDsHub.AutoBeli and not _G.MDsHub.AutoFarm and not IsTraveling then
+            pcall(function()
+                local mob = FindNearestMob()
+                local mobRoot = mob and mob:FindFirstChild("HumanoidRootPart")
+                if mobRoot then
+                    TravelTo(mobRoot.CFrame * CFrame.new(0, _G.MDsHub.FarmDistance, 0))
+                    EquipWeapon(_G.MDsHub.SelectedWeapon)
+                    if _G.MDsHub.FastAttack then
+                        ExecuteFastAttack()
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+local function GetWorldFruitPart()
+    for _, object in ipairs(Workspace:GetDescendants()) do
+        if object:IsA("Tool") then
+            local heldByPlayer = false
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player.Character and object:IsDescendantOf(player.Character) then
+                    heldByPlayer = true
+                    break
+                end
+            end
+            local isFruit = object:FindFirstChild("Fruit")
+                or object.Name:lower():find("fruit")
+                or object.ToolTip == "Blox Fruit"
+            if isFruit and not heldByPlayer then
+                return object:FindFirstChild("Handle") or object:FindFirstChildWhichIsA("BasePart")
+            end
+        elseif object:IsA("BasePart") and object.Name:lower():find("fruit") then
+            return object
+        end
+    end
+end
+
+task.spawn(function()
+    while task.wait(2) do
+        if _G.MDsHub.AutoCollectFruits and not IsTraveling then
+            pcall(function()
+                local fruitPart = GetWorldFruitPart()
+                if fruitPart and TravelTo(fruitPart.CFrame) then
+                    local root = GetRootPart()
+                    firetouchinterest(root, fruitPart, 0)
+                    firetouchinterest(root, fruitPart, 1)
+                    Notify("Frutas", "Fruta encontrada: tentando coletar.", 3)
+                end
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    local lastPurchase = 0
+    while task.wait(1) do
+        if _G.MDsHub.AutoBuyRandomFruit and os.clock() - lastPurchase >= _G.MDsHub.FruitBuyInterval then
+            lastPurchase = os.clock()
+            pcall(function()
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+                Notify("Frutas", "Tentativa de compra aleatória realizada.", 3)
+            end)
+        end
+    end
+end)
+
+local function FindNearestPVPTarget(maximumDistance)
+    local root = GetRootPart()
+    if not root then return end
+
+    local target, nearestDistance = nil, maximumDistance
+    for _, player in ipairs(Players:GetPlayers()) do
+        local isEnemy = not LocalPlayer.Team or not player.Team or player.Team ~= LocalPlayer.Team
+        if player ~= LocalPlayer and player.Character and isEnemy then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            local playerRoot = player.Character:FindFirstChild("HumanoidRootPart")
+            if humanoid and humanoid.Health > 0 and playerRoot then
+                local distance = (root.Position - playerRoot.Position).Magnitude
+                if distance <= nearestDistance then
+                    target, nearestDistance = player, distance
+                end
+            end
+        end
+    end
+    return target
+end
+
+local function ExecutePVPCombo(target)
+    local root = GetRootPart()
+    local targetRoot = target and target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+    if not root or not targetRoot then return false end
+
+    local comboStyle = _G.MDsHub.PVPComboStyle
+    local keySets = {
+        ["Melee"] = {"Z", "X", "C"},
+        ["Sword"] = {"Z", "X"},
+        ["Blox Fruit"] = {"Z", "X", "C", "V"}
+    }
+    local keys = keySets[comboStyle]
+    if not keys then return false end
+
+    Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetRoot.Position)
+    EquipWeapon(comboStyle)
+    ExecuteFastAttack()
+
+    local virtualInput = game:GetService("VirtualInputManager")
+    for _, keyName in ipairs(keys) do
+        local keyCode = Enum.KeyCode[keyName]
+        virtualInput:SendKeyEvent(true, keyCode, false, game)
+        task.wait(0.1)
+        virtualInput:SendKeyEvent(false, keyCode, false, game)
+        task.wait(0.2)
+    end
+    return true
+end
+
+task.spawn(function()
+    while task.wait(3.5) do
+        if _G.MDsHub.AutoPVPCombo then
+            pcall(function()
+                local target = FindNearestPVPTarget(_G.MDsHub.PVPTargetRange)
+                if target then
+                    ExecutePVPCombo(target)
                 end
             end)
         end
@@ -593,6 +1042,26 @@ task.spawn(function()
                 end
             end)
         end
+    end
+end)
+
+-- Distribui os pontos apenas nas categorias habilitadas na aba Status.
+task.spawn(function()
+    while task.wait(0.4) do
+        pcall(function()
+            local stats = {
+                {enabled = "AutoMelee", name = "Melee"},
+                {enabled = "AutoDefense", name = "Defense"},
+                {enabled = "AutoSword", name = "Sword"},
+                {enabled = "AutoGun", name = "Gun"},
+                {enabled = "AutoFruit", name = "Demon Fruit"}
+            }
+            for _, stat in ipairs(stats) do
+                if _G.MDsHub[stat.enabled] then
+                    ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", stat.name, _G.MDsHub.StatPoints)
+                end
+            end
+        end)
     end
 end)
 
@@ -740,6 +1209,8 @@ local function BuildMDsHubScreenGUI()
     Sidebar.BorderSizePixel = 0
     Sidebar.ScrollBarThickness = 2
     Sidebar.ScrollBarImageColor3 = Theme.PrimaryRed
+    Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
     Sidebar.Parent = MainFrame
 
     local SidebarLayout = Instance.new("UIListLayout")
@@ -789,6 +1260,8 @@ local function BuildMDsHubScreenGUI()
         TabPage.BackgroundTransparency = 1
         TabPage.ScrollBarThickness = 4
         TabPage.ScrollBarImageColor3 = Theme.PrimaryRed
+        TabPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
         TabPage.Visible = false
         TabPage.Parent = ContentContainer
 
@@ -860,6 +1333,127 @@ local function BuildMDsHubScreenGUI()
                     Switch.BackgroundColor3 = state and Theme.PrimaryRed or Color3.fromRGB(45, 35, 40)
                     Switch.Text = state and "ON" or "OFF"
                     if callback then callback(state) end
+                end)
+            end,
+
+            AddChoice = function(self, labelText, choices, defaultValue, callback)
+                local ChoiceFrame = Instance.new("Frame")
+                ChoiceFrame.Size = UDim2.new(0.94, 0, 0, 36)
+                ChoiceFrame.BackgroundColor3 = Theme.CardBg
+                ChoiceFrame.Parent = TabPage
+
+                local Corner = Instance.new("UICorner")
+                Corner.CornerRadius = UDim.new(0, 6)
+                Corner.Parent = ChoiceFrame
+
+                local Label = Instance.new("TextLabel")
+                Label.Size = UDim2.new(0.6, 0, 1, 0)
+                Label.Position = UDim2.new(0, 10, 0, 0)
+                Label.BackgroundTransparency = 1
+                Label.Text = labelText
+                Label.TextColor3 = Theme.TextLight
+                Label.TextSize = 13
+                Label.Font = Enum.Font.Gotham
+                Label.TextXAlignment = Enum.TextXAlignment.Left
+                Label.Parent = ChoiceFrame
+
+                local ChoiceButton = Instance.new("TextButton")
+                ChoiceButton.Size = UDim2.new(0.34, 0, 0, 24)
+                ChoiceButton.Position = UDim2.new(1, -10, 0.5, -12)
+                ChoiceButton.AnchorPoint = Vector2.new(1, 0)
+                ChoiceButton.BackgroundColor3 = Theme.ButtonBg
+                ChoiceButton.TextColor3 = Theme.PrimaryRed
+                ChoiceButton.TextSize = 11
+                ChoiceButton.Font = Enum.Font.GothamBold
+                ChoiceButton.Parent = ChoiceFrame
+
+                local ButtonCorner = Instance.new("UICorner")
+                ButtonCorner.CornerRadius = UDim.new(0, 5)
+                ButtonCorner.Parent = ChoiceButton
+
+                local index = 1
+                for choiceIndex, choice in ipairs(choices) do
+                    if choice == defaultValue then
+                        index = choiceIndex
+                        break
+                    end
+                end
+
+                local function UpdateChoice()
+                    ChoiceButton.Text = choices[index]
+                    if callback then callback(choices[index]) end
+                end
+                UpdateChoice()
+
+                ChoiceButton.MouseButton1Click:Connect(function()
+                    index = (index % #choices) + 1
+                    UpdateChoice()
+                end)
+            end,
+
+            AddStepper = function(self, labelText, minimum, maximum, increment, defaultValue, callback)
+                local StepperFrame = Instance.new("Frame")
+                StepperFrame.Size = UDim2.new(0.94, 0, 0, 36)
+                StepperFrame.BackgroundColor3 = Theme.CardBg
+                StepperFrame.Parent = TabPage
+
+                local Corner = Instance.new("UICorner")
+                Corner.CornerRadius = UDim.new(0, 6)
+                Corner.Parent = StepperFrame
+
+                local Label = Instance.new("TextLabel")
+                Label.Size = UDim2.new(0.54, 0, 1, 0)
+                Label.Position = UDim2.new(0, 10, 0, 0)
+                Label.BackgroundTransparency = 1
+                Label.Text = labelText
+                Label.TextColor3 = Theme.TextLight
+                Label.TextSize = 13
+                Label.Font = Enum.Font.Gotham
+                Label.TextXAlignment = Enum.TextXAlignment.Left
+                Label.Parent = StepperFrame
+
+                local value = defaultValue
+                local ValueLabel = Instance.new("TextLabel")
+                ValueLabel.Size = UDim2.new(0, 42, 0, 24)
+                ValueLabel.Position = UDim2.new(1, -64, 0.5, -12)
+                ValueLabel.BackgroundTransparency = 1
+                ValueLabel.TextColor3 = Theme.PrimaryRed
+                ValueLabel.TextSize = 12
+                ValueLabel.Font = Enum.Font.GothamBold
+                ValueLabel.Parent = StepperFrame
+
+                local function CreateStepButton(textValue, xOffset)
+                    local Button = Instance.new("TextButton")
+                    Button.Size = UDim2.new(0, 22, 0, 22)
+                    Button.Position = UDim2.new(1, xOffset, 0.5, -11)
+                    Button.BackgroundColor3 = Theme.ButtonBg
+                    Button.Text = textValue
+                    Button.TextColor3 = Theme.TextLight
+                    Button.TextSize = 14
+                    Button.Font = Enum.Font.GothamBold
+                    Button.Parent = StepperFrame
+                    local ButtonCorner = Instance.new("UICorner")
+                    ButtonCorner.CornerRadius = UDim.new(0, 5)
+                    ButtonCorner.Parent = Button
+                    return Button
+                end
+
+                local Minus = CreateStepButton("−", -96)
+                local Plus = CreateStepButton("+", -32)
+                local function UpdateValue()
+                    value = math.max(minimum, math.min(maximum, value))
+                    ValueLabel.Text = tostring(value)
+                    if callback then callback(value) end
+                end
+                UpdateValue()
+
+                Minus.MouseButton1Click:Connect(function()
+                    value = value - increment
+                    UpdateValue()
+                end)
+                Plus.MouseButton1Click:Connect(function()
+                    value = value + increment
+                    UpdateValue()
                 end)
             end,
 
@@ -982,21 +1576,46 @@ local function BuildMDsHubScreenGUI()
         _G.MDsHub.AutoFarm = v
         if not v then StopTween() end
     end)
+    TabFarm:AddChoice("Arma para o Farm", {"Melee", "Sword", "Gun", "Blox Fruit", "Any Item"}, _G.MDsHub.SelectedWeapon, function(value)
+        _G.MDsHub.SelectedWeapon = value
+    end)
+    TabFarm:AddChoice("Item personalizado", GetOwnedToolNames(), _G.MDsHub.SelectedItem, function(value)
+        _G.MDsHub.SelectedItem = value
+    end)
+    TabFarm:AddButton("Atualizar lista de itens", function()
+        BuildMDsHubScreenGUI()
+    end)
+    TabFarm:AddStepper("Distância do alvo", 10, 60, 5, _G.MDsHub.FarmDistance, function(value)
+        _G.MDsHub.FarmDistance = value
+    end)
     TabFarm:AddToggle("Ultra Fast Attack (Banana Method)", true, function(v)
         _G.MDsHub.FastAttack = v
+    end)
+    TabFarm:AddStepper("Ataques por ciclo", 1, 8, 1, _G.MDsHub.MultiHitCount, function(value)
+        _G.MDsHub.MultiHitCount = value
     end)
     TabFarm:AddToggle("Bring Mobs (Agrupar Inimigos)", true, function(v)
         _G.MDsHub.BringMobs = v
     end)
+    TabFarm:AddStepper("Raio do Bring Mobs", 50, 350, 25, _G.MDsHub.BringMobsRadius, function(value)
+        _G.MDsHub.BringMobsRadius = value
+    end)
     TabFarm:AddToggle("Auto Buso Haki (Armamento)", true, function(v)
         _G.MDsHub.AutoBusoHaki = v
+    end)
+    TabFarm:AddToggle("Auto Beli (NPC mais próximo)", false, function(v)
+        _G.MDsHub.AutoBeli = v
     end)
 
     -- 4. TAB BOSSES (SEA 3)
     local TabBoss = CreateTab("Bosses", "👑")
     TabBoss:AddSection("Eventos & Chefes Especiais")
-    TabBoss:AddToggle("Auto Cake Prince / Dough King (500 Mobs)", false, function(v)
+    TabBoss:AddToggle("Auto Cake Prince (500 Mobs)", false, function(v)
         _G.MDsHub.AutoCakePrince = v
+        if not v then StopTween() end
+    end)
+    TabBoss:AddToggle("Auto Dough King (500 Mobs)", false, function(v)
+        _G.MDsHub.AutoDoughKing = v
         if not v then StopTween() end
     end)
     TabBoss:AddToggle("Auto Elite Hunter (Sea 3)", false, function(v)
@@ -1030,7 +1649,7 @@ local function BuildMDsHubScreenGUI()
         _G.MDsHub.AutoFindBlueGear = v
     end)
     TabRace:AddButton("Puxar Alavanca do Templo (Pull Lever)", function()
-        TweenTo(RaceData.TempleOfTime.Lever)
+        TravelTo(RaceData.TempleOfTime.Lever)
         task.wait(1.5)
         for _, v in pairs(Workspace:GetDescendants()) do
             if v.Name == "Lever" and v:IsA("ClickDetector") then
@@ -1042,21 +1661,90 @@ local function BuildMDsHubScreenGUI()
     TabRace:AddButton("Teleportar para a Porta da sua Raça", function()
         local r = GetPlayerRace()
         local cf = RaceData.TempleOfTime.Doors[r] or RaceData.TempleOfTime.Doors["Human"]
-        TweenTo(cf)
+        TravelTo(cf)
         Notify("Templo", "Viajando para porta: " .. r)
     end)
-    TabRace:AddToggle("Auto Completar Desafio do Trial", false, function(v)
+    TabRace:AddToggle("Preparar Trial V4 (Templo + Porta)", false, function(v)
         _G.MDsHub.AutoCompleteTrial = v
     end)
     TabRace:AddToggle("Auto Treinar Despertar V4 (Transformar)", false, function(v)
         _G.MDsHub.AutoTrainV4 = v
     end)
+    TabRace:AddToggle("Auto Ir ao Templo do Tempo", false, function(v)
+        _G.MDsHub.AutoTempleV4 = v
+    end)
+    TabRace:AddButton("Ir para a porta do Trial da raça", function()
+        if TravelToRaceTrialDoor() then
+            Notify("Raça V4", "Porta do Trial preparada para " .. GetPlayerRace())
+        else
+            Notify("Raça V4", "Não foi possível iniciar a viagem ao Trial.")
+        end
+    end)
 
-    -- 6. TAB FRUTAS
+    -- 6. TAB ESPADAS
+    local TabSword = CreateTab("Espadas", "⚔")
+    TabSword:AddSection("Maestria e objetivos")
+    TabSword:AddParagraph("TTK:", "Saddi, Shisui e Wando com maestria 300; depois fale com o Mysterious Man.")
+    TabSword:AddParagraph("CDK:", "Yama e Tushita com maestria 350, nível 2200+ e os Trials concluídos.")
+    TabSword:AddChoice("Espada preferida", {"Auto", "Saddi", "Shisui", "Wando", "Yama", "Tushita", "True Triple Katana", "Cursed Dual Katana"}, _G.MDsHub.PreferredSword, function(value)
+        _G.MDsHub.PreferredSword = value
+        if value ~= "Auto" then
+            _G.MDsHub.SelectedWeapon = "Sword"
+        end
+    end)
+    TabSword:AddToggle("Auto maestria TTK", false, function(v)
+        _G.MDsHub.AutoTTKMastery = v
+        if v then _G.MDsHub.AutoCDKMastery = false end
+    end)
+    TabSword:AddToggle("Auto maestria CDK", false, function(v)
+        _G.MDsHub.AutoCDKMastery = v
+        if v then _G.MDsHub.AutoTTKMastery = false end
+    end)
+    TabSword:AddButton("Equipar espada selecionada", function()
+        local sword = _G.MDsHub.PreferredSword
+        if sword == "Auto" or not EquipNamedSword(sword) then
+            Notify("Espadas", "A espada selecionada não está no inventário.")
+        else
+            Notify("Espadas", sword .. " equipada.")
+        end
+    end)
+
+    -- 7. TAB PVP
+    local TabPVP = CreateTab("PvP", "⚡")
+    TabPVP:AddSection("Combo automático")
+    TabPVP:AddParagraph("Alvo:", "Somente jogador inimigo mais próximo dentro do alcance definido.")
+    TabPVP:AddChoice("Estilo de combo", {"Melee", "Sword", "Blox Fruit"}, _G.MDsHub.PVPComboStyle, function(value)
+        _G.MDsHub.PVPComboStyle = value
+    end)
+    TabPVP:AddStepper("Alcance máximo do alvo", 50, 500, 25, _G.MDsHub.PVPTargetRange, function(value)
+        _G.MDsHub.PVPTargetRange = value
+    end)
+    TabPVP:AddToggle("Auto PvP Combo", false, function(v)
+        _G.MDsHub.AutoPVPCombo = v
+    end)
+    TabPVP:AddButton("Executar combo no alvo próximo", function()
+        local target = FindNearestPVPTarget(_G.MDsHub.PVPTargetRange)
+        if target and ExecutePVPCombo(target) then
+            Notify("PvP", "Combo aplicado em " .. target.DisplayName)
+        else
+            Notify("PvP", "Nenhum alvo inimigo dentro do alcance.")
+        end
+    end)
+
+    -- 8. TAB FRUTAS
     local TabFruit = CreateTab("Frutas", "🍎")
     TabFruit:AddSection("Gerenciamento de Frutas")
     TabFruit:AddToggle("Auto Armazenar Frutas (Store)", true, function(v)
         _G.MDsHub.AutoStoreFruits = v
+    end)
+    TabFruit:AddToggle("Auto Coletar Frutas do mapa", false, function(v)
+        _G.MDsHub.AutoCollectFruits = v
+    end)
+    TabFruit:AddStepper("Intervalo compra aleatória (seg.)", 60, 900, 60, _G.MDsHub.FruitBuyInterval, function(value)
+        _G.MDsHub.FruitBuyInterval = value
+    end)
+    TabFruit:AddToggle("Auto comprar Fruta Aleatória", false, function(v)
+        _G.MDsHub.AutoBuyRandomFruit = v
     end)
     TabFruit:AddButton("Comprar Fruta Aleatória (Cousin)", function()
         ReplicatedStorage.Remotes.CommF_:InvokeServer("Cousin", "Buy")
@@ -1071,22 +1759,51 @@ local function BuildMDsHubScreenGUI()
     TabStats:AddToggle("Auto Sword", false, function(v) _G.MDsHub.AutoSword = v end)
     TabStats:AddToggle("Auto Gun", false, function(v) _G.MDsHub.AutoGun = v end)
     TabStats:AddToggle("Auto Demon Fruit", false, function(v) _G.MDsHub.AutoFruit = v end)
+    TabStats:AddStepper("Pontos por distribuição", 1, 10, 1, _G.MDsHub.StatPoints, function(value)
+        _G.MDsHub.StatPoints = value
+    end)
 
     -- 8. TAB JOGADOR & MISC
     local TabPlayer = CreateTab("Jogador", "🏃")
     TabPlayer:AddSection("Habilidades do Jogador")
     TabPlayer:AddToggle("NoClip (Atravessar Paredes)", false, function(v) _G.MDsHub.NoClip = v end)
     TabPlayer:AddToggle("Pulo Infinito", false, function(v) _G.MDsHub.InfiniteJump = v end)
-    TabPlayer:AddToggle("Velocidade 100 (WalkSpeed)", false, function(v)
-        _G.MDsHub.CustomSpeed = v
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.WalkSpeed = v and 100 or 16
+    TabPlayer:AddStepper("WalkSpeed", 16, 100, 4, _G.MDsHub.WalkSpeed, function(value)
+        _G.MDsHub.WalkSpeed = value
+        if _G.MDsHub.CustomSpeed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = value
         end
     end)
+    TabPlayer:AddToggle("Velocidade personalizada", false, function(v)
+        _G.MDsHub.CustomSpeed = v
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = v and _G.MDsHub.WalkSpeed or 16
+        end
+    end)
+    TabPlayer:AddStepper("JumpPower", 50, 150, 10, _G.MDsHub.JumpPower, function(value)
+        _G.MDsHub.JumpPower = value
+        if _G.MDsHub.CustomJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = value
+        end
+    end)
+    TabPlayer:AddToggle("Pulo personalizado", false, function(v)
+        _G.MDsHub.CustomJump = v
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = v and _G.MDsHub.JumpPower or 50
+        end
+    end)
+    TabPlayer:AddToggle("Full Bright", false, SetFullBright)
 
     -- 9. TAB CONFIG & OTIMIZAÇÃO
     local TabConfig = CreateTab("Config", "⚙️")
     TabConfig:AddSection("Otimização & Servidor")
+    TabConfig:AddStepper("Distância por etapa de viagem", 100, 600, 50, _G.MDsHub.TravelStepDistance, function(value)
+        _G.MDsHub.TravelStepDistance = value
+    end)
+    TabConfig:AddButton("Parar todas as automações", function()
+        StopAllAutomations()
+        Notify("Config", "Todas as automações nativas foram interrompidas.")
+    end)
     TabConfig:AddButton("Boost de FPS (Remover Texturas)", function()
         pcall(function()
             for _, v in pairs(Workspace:GetDescendants()) do

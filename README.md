@@ -39,6 +39,18 @@ Na nova aba **🚀 Multi-Hubs**, você pode executar instantaneamente ou definir
 - **Bring Mobs Inteligente:** Agrupa e congela inimigos em até 280 studs.
 - **Auto Farm Level:** Do nível 1 ao 2550+ (Sea 1, 2 e 3).
 - **Auto Buso Haki:** Ativação automática de Armamento.
+- **Qualquer item:** escolha uma ferramenta do inventário para usar no farm.
+- **Auto Beli:** combate NPCs próximos para obter recompensas em Beli.
+
+### 🍎 Frutas e PvP
+- **Auto Fruit:** encontra, coleta e armazena frutas encontradas no mapa, com compra aleatória opcional e intervalo configurável.
+- **PvP Combo:** modo opcional de combo por Melee, Sword ou Blox Fruit em inimigos próximos.
+
+### 🎛️ Controles aprimorados
+- **Escolha de arma:** Melee, Sword, Gun ou Blox Fruit para o Auto Farm.
+- **Ajustes graduais:** distância do alvo, raio de Bring Mobs, ataques por ciclo e pontos por distribuição.
+- **Jogador:** WalkSpeed, JumpPower, pulo infinito e Full Bright configuráveis.
+- **Parar automações:** botão único para interromper os loops nativos e o tween ativo.
 
 ### 🌌 Sistema Completo de Raças (V1 até V4)
 - **Raça V1:** Reroll com NPC Tort no Sea 2.
@@ -50,7 +62,13 @@ Na nova aba **🚀 Multi-Hubs**, você pode executar instantaneamente ou definir
   - Scanner e coleta instantânea da Engrenagem Azul (*Blue Gear*).
   - Puxar alavanca do Templo do Tempo (*Pull Lever*).
   - Teleporte para a porta da sua raça e resolução automática dos Trials (*Mink, Angel, Shark, Human, Ghoul, Cyborg*).
-  - Auto despertar e treino de V4 em combate.
+- Auto despertar e treino de V4 em combate.
+- Preparação do Trial: rota em etapas até o Templo do Tempo e porta da raça, com ativação periódica da transformação.
+
+### ⚔️ Espadas lendárias (TTK e CDK)
+- Seleção de espada preferida para o farm e alternância pela menor maestria disponível.
+- Auto maestria de Saddi, Shisui e Wando para a TTK.
+- Auto maestria de Yama e Tushita para a CDK, além de combate ao Cursed Skeleton Boss quando ele estiver disponível.
 
 ### 👑 Bosses & Sea Events (Sea 3)
 - **Auto Cake Prince & Dough King:** Farma a contagem de 500 mobs e derrota o chefe.
