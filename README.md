@@ -1,6 +1,6 @@
-# 🍌 MDs HUB - Blox Fruits (Banana Pro Edition v4.0)
+# 🔥 MDs HUB - Blox Fruits (Red Edition v5.0 | By GoltolaMD)
 
-Script oficial do **MDs HUB** para Blox Fruits, hospedado no repositório [`evolucaomente27-bot/MDs-Blox-HUB`](https://github.com/evolucaomente27-bot/MDs-Blox-HUB).
+O **MDs HUB** agora conta com uma interface **Vermelha Neon (Crimson Edition)**, desenvolvida **By GoltolaMD**, reunindo em um só lugar os melhores recursos de automação e integração com múltiplos scripts renomados (*Quantum Onyx, Bacon Hub, NewRedz*).
 
 ---
 
@@ -18,12 +18,26 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/evolucaomente27-bot/M
 
 ---
 
-## 🧬 Recursos do MDs HUB v4.0
+## 🚀 Hubs Integrados no MDs HUB (Multi-Hub 1-Click)
 
-### ⚔️ Auto Farm & Banana Ultra Fast Attack
-- **Fast Attack Contínuo:** Sem cooldown de animação com multi-hits instantâneos.
-- **Bring Mobs Inteligente:** Puxa e congela inimigos no raio de 280 studs.
-- **Auto Farm Level:** Suporte automático do nível 1 ao 2550+ (Sea 1, 2 e 3).
+Na nova aba **🚀 Multi-Hubs**, você pode executar instantaneamente ou definir para auto-execução:
+1. 🟣 **Quantum Onyx Hub:** `loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))()`
+2. 🥓 **Bacon Hub:** `loadstring(game:HttpGet('https://raw.githubusercontent.com/BaconScriptHub/BaconHub/main/New-BaconHub.lua.txt'))()`
+3. 🔴 **Redz Hub (NewRedz):** `Settings = { JoinTeam = "Pirates", Translator = true }; loadstring(game:HttpGet("https://raw.githubusercontent.com/realreduz999/NewRedz/main/main.lua"))(Settings)`
+
+---
+
+## 🧬 Recursos Completos do MDs HUB v5.0
+
+### 🎨 Nova UI Vermelha (Crimson Theme By GoltolaMD)
+- Design Dark com realces em **Vermelho Neon**.
+- Botão flutuante estilizado para **Mobile e PC**.
+- Menu 100% nativo em `ScreenGui`, sem dependência de bibliotecas externas que possam falhar.
+
+### ⚔️ Auto Farm & Ultra Fast Attack
+- **Multi-Hits por Frame:** Sem cooldown de animação de arma.
+- **Bring Mobs Inteligente:** Agrupa e congela inimigos em até 280 studs.
+- **Auto Farm Level:** Do nível 1 ao 2550+ (Sea 1, 2 e 3).
 - **Auto Buso Haki:** Ativação automática de Armamento.
 
 ### 🌌 Sistema Completo de Raças (V1 até V4)
@@ -31,7 +45,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/evolucaomente27-bot/M
 - **Raça V2:** Auto coleta de Flores Azul, Vermelha e Amarela + Alquimista.
 - **Raça V3:** Auto Missão do Arowe (30 baús Mink, Bosses Human, etc.).
 - **Raça V4 (Templo do Tempo & Mirage):**
-  - Alerta de Mirage Island e teleporte para a montanha mais alta.
+  - Alerta de Mirage Island e teleporte para o topo da montanha.
   - Alinhamento de câmera na Lua Cheia + ativação de ressonância V3.
   - Scanner e coleta instantânea da Engrenagem Azul (*Blue Gear*).
   - Puxar alavanca do Templo do Tempo (*Pull Lever*).
@@ -56,7 +70,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/evolucaomente27-bot/M
 
 ```
 MDs-Blox-HUB/
-├── Main.lua                  # Script principal completo (v4.0 Pro)
+├── Main.lua                  # Script principal Red Edition All-in-One By GoltolaMD
 ├── Loader.lua                # Loader com Anti-AFK e notificações
 ├── README.md                 # Documentação e instruções de loadstring
 └── analysis_gravity_hub.md   # Relatório técnico do desmonte do Gravity Hub

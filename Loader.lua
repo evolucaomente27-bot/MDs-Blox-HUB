@@ -1,10 +1,17 @@
 --[[
     ╔══════════════════════════════════════════════════════════════════╗
     ║                           MDs HUB                               ║
-    ║               Official Blox Fruits Script Loader                 ║
+    ║             Official Blox Fruits All-in-One Loader               ║
+    ║                      🔥 By GoltolaMD 🔥                         ║
     ║               GitHub: evolucaomente27-bot/MDs-Blox-HUB           ║
     ╚══════════════════════════════════════════════════════════════════╝
 ]]
+
+-- Configurações globais
+local Settings = {
+    JoinTeam = "Pirates",
+    Translator = true
+}
 
 -- Proteção Anti-AFK integrada
 local Players = game:GetService("Players")
@@ -21,8 +28,8 @@ end)
 local StarterGui = game:GetService("StarterGui")
 pcall(function()
     StarterGui:SetCore("SendNotification", {
-        Title = "MDs HUB",
-        Text = "Carregando o Hub oficial... Aguarde!",
+        Title = "MDs HUB | By GoltolaMD",
+        Text = "Carregando a Red Edition All-in-One... Aguarde!",
         Duration = 5,
         Icon = "rbxassetid://4483345998"
     })

@@ -3,10 +3,16 @@
     ║                                  MDs HUB                                   ║
     ║                         Blox Fruits Universal Script                       ║
     ║                         Suporte: Sea 1, Sea 2 e Sea 3                      ║
-    ║           Interface Gráfica Nativa (UI 100% Integrada Mobile e PC)         ║
-    ║                             Versão: 4.5 Pro Edition                        ║
+    ║             Edição Vermelha All-in-One Multi-Hub | By GoltolaMD            ║
+    ║                             Versão: 5.0 Red Edition                        ║
     ╚════════════════════════════════════════════════════════════════════════════╝
 ]]
+
+-- Configurações de Inicialização Automática (Settings)
+local Settings = {
+    JoinTeam = "Pirates",
+    Translator = true
+}
 
 -- Inicialização de Serviços
 local Players = game:GetService("Players")
@@ -25,14 +31,23 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- Anti-AFK integrado (Banana Method)
+-- Auto Join Team (Pirates)
+task.spawn(function()
+    pcall(function()
+        if Settings.JoinTeam and ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("CommF_") then
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("SetTeam", Settings.JoinTeam)
+        end
+    end)
+end)
+
+-- Anti-AFK integrado
 LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Down(Vector2.new(0, 0), Camera.CFrame)
     task.wait(1)
     VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
 end)
 
--- Tabela Global de Configurações
+-- Tabela Global de Configurações do MDs HUB
 _G.MDsHub = {
     -- Auto Farm
     AutoFarm = false,
@@ -43,7 +58,7 @@ _G.MDsHub = {
     BringMobs = true,
     BringMobsRadius = 280,
     
-    -- Banana Ultra Fast Attack
+    -- Ultra Fast Attack
     FastAttack = true,
     MultiHitCount = 4,
     
@@ -85,6 +100,11 @@ _G.MDsHub = {
     AutoCompleteTrial = false,
     AutoTrainV4 = false,
 
+    -- Multi-Hubs Integrados
+    AutoLoadQuantum = false,
+    AutoLoadBacon = false,
+    AutoLoadRedz = false,
+
     -- Player & Visuals
     WalkSpeed = 16,
     JumpPower = 50,
@@ -111,7 +131,7 @@ local BodyVelocityHolder = nil
 local function Notify(title, text, duration)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
-            Title = "MDs HUB | " .. (title or "Aviso"),
+            Title = "MDs HUB (By GoltolaMD) | " .. (title or "Aviso"),
             Text = text or "",
             Duration = duration or 3,
             Icon = "rbxassetid://4483345998"
@@ -436,6 +456,35 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------------
+-- INTEGRAÇÃO DOS MULTI-HUBS SOLICITADOS
+----------------------------------------------------------------------
+
+local function ExecuteQuantumOnyx()
+    pcall(function()
+        Notify("Multi-Hub", "Carregando Quantum Onyx...", 3)
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/flazhy/QuantumOnyx/refs/heads/main/QuantumOnyx.lua"))()
+    end)
+end
+
+local function ExecuteBaconHub()
+    pcall(function()
+        Notify("Multi-Hub", "Carregando Bacon Hub...", 3)
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/BaconScriptHub/BaconHub/main/New-BaconHub.lua.txt'))()
+    end)
+end
+
+local function ExecuteNewRedz()
+    pcall(function()
+        Notify("Multi-Hub", "Carregando Redz Hub (NewRedz)...", 3)
+        local redzSettings = {
+            JoinTeam = "Pirates",
+            Translator = true
+        }
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/realreduz999/NewRedz/main/main.lua"))(redzSettings)
+    end)
+end
+
+----------------------------------------------------------------------
 -- SEA 3 BOSSES & RAÇA V4 LOOPS
 ----------------------------------------------------------------------
 
@@ -548,26 +597,24 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------------------------
--- INTERFACE GRÁFICA NATIVA E COMPLETA (MDs HUB UI ENGINE)
+-- INTERFACE GRÁFICA VERMELHA NATIVA (RED EDITION BY GOLTOLAMD)
 ----------------------------------------------------------------------
 
 local function BuildMDsHubScreenGUI()
-    -- Destrói instância anterior se existir
     pcall(function()
-        if CoreGui:FindFirstChild("MDs_Hub_ScreenGui") then
-            CoreGui.MDs_Hub_ScreenGui:Destroy()
+        if CoreGui:FindFirstChild("MDs_Hub_RedGui") then
+            CoreGui.MDs_Hub_RedGui:Destroy()
         end
-        if LocalPlayer.PlayerGui:FindFirstChild("MDs_Hub_ScreenGui") then
-            LocalPlayer.PlayerGui.MDs_Hub_ScreenGui:Destroy()
+        if LocalPlayer.PlayerGui:FindFirstChild("MDs_Hub_RedGui") then
+            LocalPlayer.PlayerGui.MDs_Hub_RedGui:Destroy()
         end
     end)
 
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "MDs_Hub_ScreenGui"
+    ScreenGui.Name = "MDs_Hub_RedGui"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- Proteção de Gui (Synapse / Delta / Solara)
     if gethui then
         ScreenGui.Parent = gethui()
     elseif syn and syn.protect_gui then
@@ -580,13 +627,27 @@ local function BuildMDsHubScreenGUI()
         end
     end
 
-    -- Botão Flutuante para Abrir/Fechar (Essencial para Mobile)
+    -- Paleta de Cores Vermelha (Crimson / Neon Red Theme)
+    local Theme = {
+        Background = Color3.fromRGB(15, 12, 14),
+        Header = Color3.fromRGB(24, 16, 19),
+        Sidebar = Color3.fromRGB(18, 14, 16),
+        PrimaryRed = Color3.fromRGB(255, 35, 60),    -- Vermelho Neon Vibrante
+        DarkRed = Color3.fromRGB(180, 20, 40),
+        ButtonBg = Color3.fromRGB(32, 20, 24),
+        CardBg = Color3.fromRGB(24, 18, 22),
+        TextLight = Color3.fromRGB(255, 240, 245),
+        TextDim = Color3.fromRGB(170, 150, 160)
+    }
+
+    -- Botão Flutuante (Floating Red Icon)
     local OpenCloseButton = Instance.new("ImageButton")
     OpenCloseButton.Name = "MDs_FloatingIcon"
-    OpenCloseButton.Size = UDim2.new(0, 50, 0, 50)
+    OpenCloseButton.Size = UDim2.new(0, 52, 0, 52)
     OpenCloseButton.Position = UDim2.new(0.02, 0, 0.45, 0)
-    OpenCloseButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    OpenCloseButton.BackgroundColor3 = Theme.Header
     OpenCloseButton.Image = "rbxassetid://4483345998"
+    OpenCloseButton.ImageColor3 = Theme.PrimaryRed
     OpenCloseButton.Active = true
     OpenCloseButton.Draggable = true
     OpenCloseButton.Parent = ScreenGui
@@ -596,16 +657,16 @@ local function BuildMDsHubScreenGUI()
     OpenCloseCorner.Parent = OpenCloseButton
 
     local OpenCloseStroke = Instance.new("UIStroke")
-    OpenCloseStroke.Color = Color3.fromRGB(255, 200, 0) -- Dourado Banana
+    OpenCloseStroke.Color = Theme.PrimaryRed
     OpenCloseStroke.Thickness = 2.5
     OpenCloseStroke.Parent = OpenCloseButton
 
-    -- Janela Principal
+    -- Janela Principal Vermelha
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 600, 0, 360)
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -180)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    MainFrame.Size = UDim2.new(0, 610, 0, 365)
+    MainFrame.Position = UDim2.new(0.5, -305, 0.5, -182)
+    MainFrame.BackgroundColor3 = Theme.Background
     MainFrame.Active = true
     MainFrame.Draggable = true
     MainFrame.ClipsDescendants = true
@@ -616,47 +677,46 @@ local function BuildMDsHubScreenGUI()
     MainCorner.Parent = MainFrame
 
     local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = Color3.fromRGB(255, 200, 0)
-    MainStroke.Thickness = 1.5
+    MainStroke.Color = Theme.PrimaryRed
+    MainStroke.Thickness = 1.8
     MainStroke.Parent = MainFrame
 
-    -- Cabeçalho (Header)
+    -- Cabeçalho Vermelho (Header)
     local Header = Instance.new("Frame")
     Header.Name = "Header"
-    Header.Size = UDim2.new(1, 0, 0, 45)
-    Header.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Header.Size = UDim2.new(1, 0, 0, 46)
+    Header.BackgroundColor3 = Theme.Header
     Header.BorderSizePixel = 0
     Header.Parent = MainFrame
 
     local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+    TitleLabel.Size = UDim2.new(0, 220, 1, 0)
     TitleLabel.Position = UDim2.new(0, 15, 0, 0)
     TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Text = "🍌 MDs HUB | v4.5"
-    TitleLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-    TitleLabel.TextSize = 18
+    TitleLabel.Text = "🔥 MDs HUB"
+    TitleLabel.TextColor3 = Theme.PrimaryRed
+    TitleLabel.TextSize = 19
     TitleLabel.Font = Enum.Font.GothamBold
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = Header
 
     local SubTitleLabel = Instance.new("TextLabel")
-    SubTitleLabel.Size = UDim2.new(0, 200, 1, 0)
-    SubTitleLabel.Position = UDim2.new(0, 160, 0, 0)
+    SubTitleLabel.Size = UDim2.new(0, 240, 1, 0)
+    SubTitleLabel.Position = UDim2.new(0, 145, 0, 0)
     SubTitleLabel.BackgroundTransparency = 1
-    SubTitleLabel.Text = "• Banana Pro Edition"
-    SubTitleLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    SubTitleLabel.Text = "• By GoltolaMD (Red Edition)"
+    SubTitleLabel.TextColor3 = Color3.fromRGB(255, 120, 140)
     SubTitleLabel.TextSize = 13
-    SubTitleLabel.Font = Enum.Font.Gotham
+    SubTitleLabel.Font = Enum.Font.GothamSemibold
     SubTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     SubTitleLabel.Parent = Header
 
-    -- Botão Fechar / Minimizar no Cabeçalho
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Size = UDim2.new(0, 30, 0, 30)
     CloseBtn.Position = UDim2.new(1, -40, 0, 8)
-    CloseBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(45, 20, 25)
     CloseBtn.Text = "—"
-    CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseBtn.TextColor3 = Theme.TextLight
     CloseBtn.TextSize = 16
     CloseBtn.Font = Enum.Font.GothamBold
     CloseBtn.Parent = Header
@@ -665,21 +725,21 @@ local function BuildMDsHubScreenGUI()
     CloseCorner.CornerRadius = UDim.new(0, 6)
     CloseCorner.Parent = CloseBtn
 
-    -- Alternar Visibilidade da UI
     local function ToggleUI()
         MainFrame.Visible = not MainFrame.Visible
     end
     OpenCloseButton.MouseButton1Click:Connect(ToggleUI)
     CloseBtn.MouseButton1Click:Connect(ToggleUI)
 
-    -- Barra Lateral de Abas (Sidebar)
+    -- Barra Lateral (Sidebar)
     local Sidebar = Instance.new("ScrollingFrame")
     Sidebar.Name = "Sidebar"
-    Sidebar.Size = UDim2.new(0, 140, 1, -45)
-    Sidebar.Position = UDim2.new(0, 0, 0, 45)
-    Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+    Sidebar.Size = UDim2.new(0, 145, 1, -46)
+    Sidebar.Position = UDim2.new(0, 0, 0, 46)
+    Sidebar.BackgroundColor3 = Theme.Sidebar
     Sidebar.BorderSizePixel = 0
     Sidebar.ScrollBarThickness = 2
+    Sidebar.ScrollBarImageColor3 = Theme.PrimaryRed
     Sidebar.Parent = MainFrame
 
     local SidebarLayout = Instance.new("UIListLayout")
@@ -692,25 +752,24 @@ local function BuildMDsHubScreenGUI()
     SidebarPadding.PaddingTop = UDim.new(0, 8)
     SidebarPadding.Parent = Sidebar
 
-    -- Área de Conteúdo (Content Container)
+    -- Container de Conteúdo
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Name = "ContentContainer"
-    ContentContainer.Size = UDim2.new(1, -140, 1, -45)
-    ContentContainer.Position = UDim2.new(0, 140, 0, 45)
+    ContentContainer.Size = UDim2.new(1, -145, 1, -46)
+    ContentContainer.Position = UDim2.new(0, 145, 0, 46)
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = MainFrame
 
-    -- Gerenciador de Abas e Elementos
     local Tabs = {}
     local CurrentTab = nil
 
     local function CreateTab(name, icon)
         local TabButton = Instance.new("TextButton")
         TabButton.Name = "Tab_" .. name
-        TabButton.Size = UDim2.new(0, 125, 0, 32)
-        TabButton.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+        TabButton.Size = UDim2.new(0, 130, 0, 32)
+        TabButton.BackgroundColor3 = Theme.ButtonBg
         TabButton.Text = (icon or "•") .. "  " .. name
-        TabButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+        TabButton.TextColor3 = Theme.TextDim
         TabButton.TextSize = 13
         TabButton.Font = Enum.Font.GothamSemibold
         TabButton.TextXAlignment = Enum.TextXAlignment.Left
@@ -729,7 +788,7 @@ local function BuildMDsHubScreenGUI()
         TabPage.Size = UDim2.new(1, 0, 1, 0)
         TabPage.BackgroundTransparency = 1
         TabPage.ScrollBarThickness = 4
-        TabPage.ScrollBarImageColor3 = Color3.fromRGB(255, 200, 0)
+        TabPage.ScrollBarImageColor3 = Theme.PrimaryRed
         TabPage.Visible = false
         TabPage.Parent = ContentContainer
 
@@ -747,12 +806,12 @@ local function BuildMDsHubScreenGUI()
         TabButton.MouseButton1Click:Connect(function()
             for _, t in pairs(Tabs) do
                 t.Page.Visible = false
-                t.Button.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-                t.Button.TextColor3 = Color3.fromRGB(180, 180, 180)
+                t.Button.BackgroundColor3 = Theme.ButtonBg
+                t.Button.TextColor3 = Theme.TextDim
             end
             TabPage.Visible = true
-            TabButton.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
-            TabButton.TextColor3 = Color3.fromRGB(20, 20, 20)
+            TabButton.BackgroundColor3 = Theme.PrimaryRed
+            TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
             CurrentTab = TabPage
         end)
 
@@ -760,11 +819,10 @@ local function BuildMDsHubScreenGUI()
             Button = TabButton,
             Page = TabPage,
             
-            -- Adicionar Toggle
             AddToggle = function(self, labelText, defaultState, callback)
                 local ToggleFrame = Instance.new("Frame")
                 ToggleFrame.Size = UDim2.new(0.94, 0, 0, 36)
-                ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+                ToggleFrame.BackgroundColor3 = Theme.CardBg
                 ToggleFrame.Parent = TabPage
 
                 local Corner = Instance.new("UICorner")
@@ -776,7 +834,7 @@ local function BuildMDsHubScreenGUI()
                 Label.Position = UDim2.new(0, 10, 0, 0)
                 Label.BackgroundTransparency = 1
                 Label.Text = labelText
-                Label.TextColor3 = Color3.fromRGB(240, 240, 240)
+                Label.TextColor3 = Theme.TextLight
                 Label.TextSize = 13
                 Label.Font = Enum.Font.Gotham
                 Label.TextXAlignment = Enum.TextXAlignment.Left
@@ -785,9 +843,9 @@ local function BuildMDsHubScreenGUI()
                 local Switch = Instance.new("TextButton")
                 Switch.Size = UDim2.new(0, 44, 0, 22)
                 Switch.Position = UDim2.new(1, -54, 0.5, -11)
-                Switch.BackgroundColor3 = defaultState and Color3.fromRGB(255, 200, 0) or Color3.fromRGB(45, 45, 55)
+                Switch.BackgroundColor3 = defaultState and Theme.PrimaryRed or Color3.fromRGB(45, 35, 40)
                 Switch.Text = defaultState and "ON" or "OFF"
-                Switch.TextColor3 = defaultState and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(200, 200, 200)
+                Switch.TextColor3 = Color3.fromRGB(255, 255, 255)
                 Switch.TextSize = 10
                 Switch.Font = Enum.Font.GothamBold
                 Switch.Parent = ToggleFrame
@@ -799,20 +857,18 @@ local function BuildMDsHubScreenGUI()
                 local state = defaultState
                 Switch.MouseButton1Click:Connect(function()
                     state = not state
-                    Switch.BackgroundColor3 = state and Color3.fromRGB(255, 200, 0) or Color3.fromRGB(45, 45, 55)
+                    Switch.BackgroundColor3 = state and Theme.PrimaryRed or Color3.fromRGB(45, 35, 40)
                     Switch.Text = state and "ON" or "OFF"
-                    Switch.TextColor3 = state and Color3.fromRGB(20, 20, 20) or Color3.fromRGB(200, 200, 200)
                     if callback then callback(state) end
                 end)
             end,
 
-            -- Adicionar Botão
             AddButton = function(self, labelText, callback)
                 local Btn = Instance.new("TextButton")
                 Btn.Size = UDim2.new(0.94, 0, 0, 34)
-                Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+                Btn.BackgroundColor3 = Theme.ButtonBg
                 Btn.Text = labelText
-                Btn.TextColor3 = Color3.fromRGB(255, 215, 0)
+                Btn.TextColor3 = Theme.PrimaryRed
                 Btn.TextSize = 13
                 Btn.Font = Enum.Font.GothamSemibold
                 Btn.Parent = TabPage
@@ -822,7 +878,7 @@ local function BuildMDsHubScreenGUI()
                 BtnCorner.Parent = Btn
 
                 local BtnStroke = Instance.new("UIStroke")
-                BtnStroke.Color = Color3.fromRGB(60, 60, 75)
+                BtnStroke.Color = Theme.DarkRed
                 BtnStroke.Thickness = 1
                 BtnStroke.Parent = Btn
 
@@ -831,23 +887,21 @@ local function BuildMDsHubScreenGUI()
                 end)
             end,
 
-            -- Adicionar Seção / Título
             AddSection = function(self, sectionText)
                 local SectionLabel = Instance.new("TextLabel")
                 SectionLabel.Size = UDim2.new(0.94, 0, 0, 24)
                 SectionLabel.BackgroundTransparency = 1
                 SectionLabel.Text = "── " .. sectionText .. " ──"
-                SectionLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+                SectionLabel.TextColor3 = Theme.PrimaryRed
                 SectionLabel.TextSize = 12
                 SectionLabel.Font = Enum.Font.GothamBold
                 SectionLabel.Parent = TabPage
             end,
 
-            -- Adicionar Parágrafo informativo
             AddParagraph = function(self, title, desc)
                 local Frame = Instance.new("Frame")
                 Frame.Size = UDim2.new(0.94, 0, 0, 36)
-                Frame.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+                Frame.BackgroundColor3 = Theme.CardBg
                 Frame.Parent = TabPage
 
                 local Corner = Instance.new("UICorner")
@@ -859,7 +913,7 @@ local function BuildMDsHubScreenGUI()
                 T.Position = UDim2.new(0, 10, 0, 0)
                 T.BackgroundTransparency = 1
                 T.Text = title .. "  " .. (desc or "")
-                T.TextColor3 = Color3.fromRGB(220, 220, 220)
+                T.TextColor3 = Theme.TextLight
                 T.TextSize = 12
                 T.Font = Enum.Font.Gotham
                 T.TextXAlignment = Enum.TextXAlignment.Left
@@ -872,18 +926,19 @@ local function BuildMDsHubScreenGUI()
     end
 
     ------------------------------------------------------------------
-    -- CRIAÇÃO DAS ABAS DA UI
+    -- CRIAÇÃO DAS ABAS DA UI VERMELHA
     ------------------------------------------------------------------
 
     -- 1. TAB INÍCIO
     local TabHome = CreateTab("Início", "🏠")
-    TabHome:AddSection("Status da Conta")
+    TabHome:AddSection("Criador & Informações")
+    TabHome:AddParagraph("Criador:", "By GoltolaMD")
     TabHome:AddParagraph("Jogador:", LocalPlayer.DisplayName .. " (@" .. LocalPlayer.Name .. ")")
+    TabHome:AddParagraph("Time Atual:", "Piratas (Auto-Joined)")
     TabHome:AddParagraph("Raça Atual:", GetPlayerRace())
     TabHome:AddParagraph("Sea Atual:", "Sea " .. tostring(GetCurrentSea()))
-    TabHome:AddParagraph("Anti-AFK:", "Ativo 24/7 (Protegido)")
     TabHome:AddSection("Economia de Recursos")
-    TabHome:AddToggle("Modo AFK / Black Screen (Salva CPU/Bateria)", false, function(v)
+    TabHome:AddToggle("Modo AFK / Black Screen (Economiza CPU/Bateria)", false, function(v)
         _G.MDsHub.BlackScreenAFK = v
         RunService:Set3dRenderingEnabled(not v)
     end)
@@ -894,7 +949,33 @@ local function BuildMDsHubScreenGUI()
         end
     end)
 
-    -- 2. TAB AUTO FARM
+    -- 2. TAB MULTI-HUBS INTEGRADOS (TODOS OS SCRIPTS SOLICITADOS)
+    local TabMulti = CreateTab("Multi-Hubs", "🚀")
+    TabMulti:AddSection("Hubs Integrados no MDs")
+    TabMulti:AddButton("🟣 Executar Quantum Onyx Hub", function()
+        ExecuteQuantumOnyx()
+    end)
+    TabMulti:AddButton("🥓 Executar Bacon Hub", function()
+        ExecuteBaconHub()
+    end)
+    TabMulti:AddButton("🔴 Executar Redz Hub (NewRedz - Pirates)", function()
+        ExecuteNewRedz()
+    end)
+    TabMulti:AddSection("Auto-Execução em Segundo Plano")
+    TabMulti:AddToggle("Auto Iniciar Quantum Onyx ao Abrir", false, function(v)
+        _G.MDsHub.AutoLoadQuantum = v
+        if v then ExecuteQuantumOnyx() end
+    end)
+    TabMulti:AddToggle("Auto Iniciar Bacon Hub ao Abrir", false, function(v)
+        _G.MDsHub.AutoLoadBacon = v
+        if v then ExecuteBaconHub() end
+    end)
+    TabMulti:AddToggle("Auto Iniciar Redz Hub ao Abrir", false, function(v)
+        _G.MDsHub.AutoLoadRedz = v
+        if v then ExecuteNewRedz() end
+    end)
+
+    -- 3. TAB AUTO FARM
     local TabFarm = CreateTab("Auto Farm", "⚔️")
     TabFarm:AddSection("Configuração do Farm")
     TabFarm:AddToggle("Auto Farm Level (Principal)", false, function(v)
@@ -911,7 +992,7 @@ local function BuildMDsHubScreenGUI()
         _G.MDsHub.AutoBusoHaki = v
     end)
 
-    -- 3. TAB BOSSES (SEA 3)
+    -- 4. TAB BOSSES (SEA 3)
     local TabBoss = CreateTab("Bosses", "👑")
     TabBoss:AddSection("Eventos & Chefes Especiais")
     TabBoss:AddToggle("Auto Cake Prince / Dough King (500 Mobs)", false, function(v)
@@ -923,7 +1004,7 @@ local function BuildMDsHubScreenGUI()
         if not v then StopTween() end
     end)
 
-    -- 4. TAB RAÇAS (V1 - V4)
+    -- 5. TAB RAÇAS (V1 - V4)
     local TabRace = CreateTab("Raças V1-V4", "🧬")
     TabRace:AddSection("Raça V2 & V3 (Sea 2)")
     TabRace:AddToggle("Auto Raça V2 (Alquimista + 3 Flores)", false, function(v)
@@ -971,7 +1052,7 @@ local function BuildMDsHubScreenGUI()
         _G.MDsHub.AutoTrainV4 = v
     end)
 
-    -- 5. TAB FRUTAS
+    -- 6. TAB FRUTAS
     local TabFruit = CreateTab("Frutas", "🍎")
     TabFruit:AddSection("Gerenciamento de Frutas")
     TabFruit:AddToggle("Auto Armazenar Frutas (Store)", true, function(v)
@@ -982,7 +1063,7 @@ local function BuildMDsHubScreenGUI()
         Notify("Frutas", "Tentativa de compra realizada!")
     end)
 
-    -- 6. TAB STATUS
+    -- 7. TAB STATUS
     local TabStats = CreateTab("Status", "📊")
     TabStats:AddSection("Distribuição Automática")
     TabStats:AddToggle("Auto Melee", false, function(v) _G.MDsHub.AutoMelee = v end)
@@ -991,7 +1072,7 @@ local function BuildMDsHubScreenGUI()
     TabStats:AddToggle("Auto Gun", false, function(v) _G.MDsHub.AutoGun = v end)
     TabStats:AddToggle("Auto Demon Fruit", false, function(v) _G.MDsHub.AutoFruit = v end)
 
-    -- 7. TAB JOGADOR & MISC
+    -- 8. TAB JOGADOR & MISC
     local TabPlayer = CreateTab("Jogador", "🏃")
     TabPlayer:AddSection("Habilidades do Jogador")
     TabPlayer:AddToggle("NoClip (Atravessar Paredes)", false, function(v) _G.MDsHub.NoClip = v end)
@@ -1003,7 +1084,7 @@ local function BuildMDsHubScreenGUI()
         end
     end)
 
-    -- 8. TAB CONFIG & OTIMIZAÇÃO
+    -- 9. TAB CONFIG & OTIMIZAÇÃO
     local TabConfig = CreateTab("Config", "⚙️")
     TabConfig:AddSection("Otimização & Servidor")
     TabConfig:AddButton("Boost de FPS (Remover Texturas)", function()
@@ -1025,15 +1106,14 @@ local function BuildMDsHubScreenGUI()
         TeleportService:Teleport(game.PlaceId, LocalPlayer)
     end)
 
-    -- Abre a primeira aba por padrão
     if Tabs[1] then
         Tabs[1].Page.Visible = true
-        Tabs[1].Button.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
-        Tabs[1].Button.TextColor3 = Color3.fromRGB(20, 20, 20)
+        Tabs[1].Button.BackgroundColor3 = Theme.PrimaryRed
+        Tabs[1].Button.TextColor3 = Color3.fromRGB(255, 255, 255)
     end
 
-    Notify("MDs HUB", "Interface Gráfica Nativa Carregada! Clique no ícone para abrir/fechar.", 5)
+    Notify("MDs HUB", "🔥 Red Edition By GoltolaMD carregada com sucesso!", 5)
 end
 
--- Inicia a Interface
+-- Inicia a Interface Vermelha
 task.spawn(BuildMDsHubScreenGUI)
