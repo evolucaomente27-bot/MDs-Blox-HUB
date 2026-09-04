@@ -134,6 +134,9 @@ _G.MDsHub = {
     TweenSpeed = 280,
     TravelStepDistance = 350,
     TravelStepDelay = 0.12,
+    TeleportX = 0,
+    TeleportY = 0,
+    TeleportZ = 0,
     IsTweening = false,
     BlackScreenAFK = false,
     FPSBoost = false
@@ -142,6 +145,8 @@ _G.MDsHub = {
 local CurrentTween = nil
 local BodyVelocityHolder = nil
 local IsTraveling = false
+local TravelId = 0
+local SavedTeleportCFrame = nil
 local DefaultLighting = {
     Brightness = Lighting.Brightness,
     ClockTime = Lighting.ClockTime,
@@ -180,7 +185,9 @@ local function GetHumanoid()
     return char:WaitForChild("Humanoid", 5)
 end
 
-local function TweenTo(targetCFrame)
+local function TweenTo(targetCFrame, isTravelSegment)
+    if IsTraveling and not isTravelSegment then return end
+
     local root = GetRootPart()
     local char = GetCharacter()
     if not root or not char then return end
@@ -201,19 +208,25 @@ local function TweenTo(targetCFrame)
     end
     
     local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
-    CurrentTween = TweenService:Create(root, tweenInfo, {CFrame = targetCFrame})
+    local tween = TweenService:Create(root, tweenInfo, {CFrame = targetCFrame})
+    CurrentTween = tween
     _G.MDsHub.IsTweening = true
     
     CurrentTween.Completed:Connect(function()
-        _G.MDsHub.IsTweening = false
-        if BodyVelocityHolder then
-            BodyVelocityHolder:Destroy()
-            BodyVelocityHolder = nil
+        if CurrentTween == tween then
+            CurrentTween = nil
+        end
+        if not IsTraveling then
+            _G.MDsHub.IsTweening = false
+            if BodyVelocityHolder then
+                BodyVelocityHolder:Destroy()
+                BodyVelocityHolder = nil
+            end
         end
     end)
     
-    CurrentTween:Play()
-    return CurrentTween
+    tween:Play()
+    return tween
 end
 
 -- Movimento em etapas: reduz saltos longos e permite cancelar a viagem com segurança.
@@ -224,33 +237,55 @@ local function TravelTo(targetCFrame)
     if not root or not targetCFrame then return false end
 
     IsTraveling = true
-    local startedAt = root.CFrame
-    local distance = (startedAt.Position - targetCFrame.Position).Magnitude
+    TravelId = TravelId + 1
+    local travelId = TravelId
+    local distance = (root.Position - targetCFrame.Position).Magnitude
     local stepDistance = math.max(100, _G.MDsHub.TravelStepDistance or 350)
     local steps = math.max(1, math.ceil(distance / stepDistance))
     local completed = true
 
     for step = 1, steps do
-        local segmentCFrame = startedAt:Lerp(targetCFrame, step / steps)
-        local tween = TweenTo(segmentCFrame)
+        if travelId ~= TravelId then
+            completed = false
+            break
+        end
+
+        -- Cada etapa parte da posição atual. Isso impede que uma correção do
+        -- servidor faça o tween tentar retornar ao ponto inicial da viagem.
+        local currentRoot = GetRootPart()
+        if not currentRoot then
+            completed = false
+            break
+        end
+        local remainingSteps = steps - step + 1
+        local segmentCFrame = currentRoot.CFrame:Lerp(targetCFrame, 1 / remainingSteps)
+        local tween = TweenTo(segmentCFrame, true)
         if not tween then
             completed = false
             break
         end
 
         local playbackState = tween.Completed:Wait()
-        if playbackState ~= Enum.PlaybackState.Completed then
+        if playbackState ~= Enum.PlaybackState.Completed or travelId ~= TravelId then
             completed = false
             break
         end
         task.wait(_G.MDsHub.TravelStepDelay or 0.12)
     end
 
-    IsTraveling = false
+    if travelId == TravelId then
+        IsTraveling = false
+        _G.MDsHub.IsTweening = false
+        if BodyVelocityHolder then
+            BodyVelocityHolder:Destroy()
+            BodyVelocityHolder = nil
+        end
+    end
     return completed
 end
 
 local function StopTween()
+    TravelId = TravelId + 1
     if CurrentTween then
         CurrentTween:Cancel()
         CurrentTween = nil
@@ -721,7 +756,7 @@ end
 
 task.spawn(function()
     while task.wait(0.5) do
-        if (_G.MDsHub.AutoCakePrince or _G.MDsHub.AutoDoughKing) and GetCurrentSea() == 3 then
+        if not IsTraveling and (_G.MDsHub.AutoCakePrince or _G.MDsHub.AutoDoughKing) and GetCurrentSea() == 3 then
             pcall(function()
                 local enemies = Workspace:FindFirstChild("Enemies")
                 local cakeBoss = enemies and (enemies:FindFirstChild("Cake Prince") or enemies:FindFirstChild("Dough King"))
@@ -747,7 +782,7 @@ end)
 
 task.spawn(function()
     while task.wait(2) do
-        if _G.MDsHub.AutoEliteHunter and GetCurrentSea() == 3 then
+        if not IsTraveling and _G.MDsHub.AutoEliteHunter and GetCurrentSea() == 3 then
             pcall(function()
                 ReplicatedStorage.Remotes.CommF_:InvokeServer("EliteHunter")
                 local eliteNames = {"Deandre", "Diablo", "Urban"}
@@ -1457,6 +1492,52 @@ local function BuildMDsHubScreenGUI()
                 end)
             end,
 
+            AddInput = function(self, labelText, defaultValue, callback)
+                local InputFrame = Instance.new("Frame")
+                InputFrame.Size = UDim2.new(0.94, 0, 0, 36)
+                InputFrame.BackgroundColor3 = Theme.CardBg
+                InputFrame.Parent = TabPage
+
+                local Corner = Instance.new("UICorner")
+                Corner.CornerRadius = UDim.new(0, 6)
+                Corner.Parent = InputFrame
+
+                local Label = Instance.new("TextLabel")
+                Label.Size = UDim2.new(0.56, 0, 1, 0)
+                Label.Position = UDim2.new(0, 10, 0, 0)
+                Label.BackgroundTransparency = 1
+                Label.Text = labelText
+                Label.TextColor3 = Theme.TextLight
+                Label.TextSize = 13
+                Label.Font = Enum.Font.Gotham
+                Label.TextXAlignment = Enum.TextXAlignment.Left
+                Label.Parent = InputFrame
+
+                local Input = Instance.new("TextBox")
+                Input.Size = UDim2.new(0.34, 0, 0, 24)
+                Input.Position = UDim2.new(1, -10, 0.5, -12)
+                Input.AnchorPoint = Vector2.new(1, 0)
+                Input.BackgroundColor3 = Theme.ButtonBg
+                Input.Text = tostring(defaultValue or "")
+                Input.PlaceholderText = "Valor"
+                Input.TextColor3 = Theme.PrimaryRed
+                Input.PlaceholderColor3 = Theme.TextDim
+                Input.TextSize = 12
+                Input.Font = Enum.Font.GothamBold
+                Input.ClearTextOnFocus = false
+                Input.Parent = InputFrame
+
+                local InputCorner = Instance.new("UICorner")
+                InputCorner.CornerRadius = UDim.new(0, 5)
+                InputCorner.Parent = Input
+
+                Input.FocusLost:Connect(function(enterPressed)
+                    if enterPressed and callback then
+                        callback(Input.Text)
+                    end
+                end)
+            end,
+
             AddButton = function(self, labelText, callback)
                 local Btn = Instance.new("TextButton")
                 Btn.Size = UDim2.new(0.94, 0, 0, 34)
@@ -1794,12 +1875,55 @@ local function BuildMDsHubScreenGUI()
     end)
     TabPlayer:AddToggle("Full Bright", false, SetFullBright)
 
+    local TabTeleport = CreateTab("Teleporte", "📍")
+    TabTeleport:AddSection("Viagem manual")
+    TabTeleport:AddParagraph("Modo isolado:", "A viagem bloqueia tweens automáticos até terminar ou ser cancelada.")
+    TabTeleport:AddInput("Coordenada X", _G.MDsHub.TeleportX, function(value)
+        _G.MDsHub.TeleportX = tonumber(value) or _G.MDsHub.TeleportX
+    end)
+    TabTeleport:AddInput("Coordenada Y", _G.MDsHub.TeleportY, function(value)
+        _G.MDsHub.TeleportY = tonumber(value) or _G.MDsHub.TeleportY
+    end)
+    TabTeleport:AddInput("Coordenada Z", _G.MDsHub.TeleportZ, function(value)
+        _G.MDsHub.TeleportZ = tonumber(value) or _G.MDsHub.TeleportZ
+    end)
+    TabTeleport:AddStepper("Distância por etapa", 100, 600, 50, _G.MDsHub.TravelStepDistance, function(value)
+        _G.MDsHub.TravelStepDistance = value
+    end)
+    TabTeleport:AddButton("Teleportar para coordenadas", function()
+        task.spawn(function()
+            local target = CFrame.new(_G.MDsHub.TeleportX, _G.MDsHub.TeleportY, _G.MDsHub.TeleportZ)
+            if TravelTo(target) then
+                Notify("Teleporte", "Destino alcançado.")
+            else
+                Notify("Teleporte", "Viagem cancelada ou interrompida.")
+            end
+        end)
+    end)
+    TabTeleport:AddButton("Salvar posição atual", function()
+        local root = GetRootPart()
+        if root then
+            SavedTeleportCFrame = root.CFrame
+            Notify("Teleporte", "Posição atual salva.")
+        end
+    end)
+    TabTeleport:AddButton("Ir para posição salva", function()
+        if not SavedTeleportCFrame then
+            Notify("Teleporte", "Salve uma posição primeiro.")
+            return
+        end
+        task.spawn(function()
+            TravelTo(SavedTeleportCFrame)
+        end)
+    end)
+    TabTeleport:AddButton("Parar viagem", function()
+        StopTween()
+        Notify("Teleporte", "Viagem interrompida.")
+    end)
+
     -- 9. TAB CONFIG & OTIMIZAÇÃO
     local TabConfig = CreateTab("Config", "⚙️")
     TabConfig:AddSection("Otimização & Servidor")
-    TabConfig:AddStepper("Distância por etapa de viagem", 100, 600, 50, _G.MDsHub.TravelStepDistance, function(value)
-        _G.MDsHub.TravelStepDistance = value
-    end)
     TabConfig:AddButton("Parar todas as automações", function()
         StopAllAutomations()
         Notify("Config", "Todas as automações nativas foram interrompidas.")

@@ -51,6 +51,7 @@ Na nova aba **🚀 Multi-Hubs**, você pode executar instantaneamente ou definir
 - **Ajustes graduais:** distância do alvo, raio de Bring Mobs, ataques por ciclo e pontos por distribuição.
 - **Jogador:** WalkSpeed, JumpPower, pulo infinito e Full Bright configuráveis.
 - **Parar automações:** botão único para interromper os loops nativos e o tween ativo.
+- **Teleporte dedicado:** aba própria com coordenadas X/Y/Z, posição salva, cancelamento e viagem em etapas que parte da posição atual a cada trecho.
 
 ### 🌌 Sistema Completo de Raças (V1 até V4)
 - **Raça V1:** Reroll com NPC Tort no Sea 2.
